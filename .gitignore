@@ -14,3 +14,23 @@ docs/book
 *.rdb
 botserver-installers/*
 !botserver-installers/.gitkeep
+
+# Subproject directories (have their own git repos)
+botapp/
+botserver/
+botlib/
+botui/
+botbook/
+bottest/
+botdevice/
+botmodels/
+botplugin/
+bottemplates/
+
+# IDE/Editor
+.vscode/
+.zed/
+.github/
+
+# Build artifacts
+Cargo.lock
