@@ -97,6 +97,8 @@ needless_borrow = "allow"
 explicit_iter_loop = "allow"
 # Disabled: explicit into iter acceptable
 explicit_into_iter_loop = "allow"
+# Disabled: false positives with async mutexes that must be held across await points
+significant_drop_tightening = "allow"
 
 
 [profile.release]

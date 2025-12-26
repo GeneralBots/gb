@@ -6,6 +6,118 @@
 
 ---
 
+## 🔥🔥🔥 CRITICAL RULE #0: NEVER STOP UNTIL 200K CONTEXT LIMIT
+
+**ABSOLUTE RULE - NO EXCEPTIONS:**
+
+```
+YOU MUST KEEP LOOPING UNTIL:
+  - Context reaches 200K tokens, OR
+  - 0 warnings AND 0 errors achieved
+
+NEVER STOP EARLY! NEVER GIVE STATUS UPDATES AND WAIT!
+NEVER SAY "Let me check progress" AND STOP!
+NEVER SUMMARIZE AND WAIT FOR USER INPUT!
+
+IF WARNINGS > 0: KEEP FIXING! DON'T STOP!
+IF CONTEXT < 200K: KEEP FIXING! DON'T STOP!
+```
+
+**FORBIDDEN BEHAVIORS:**
+- ❌ Stopping to give "progress updates"
+- ❌ Stopping to "summarize accomplishments"  
+- ❌ Stopping to ask "should I continue?"
+- ❌ Stopping after fixing "a few files"
+- ❌ ANY pause while warnings remain AND context < 200K
+
+**REQUIRED BEHAVIOR:**
+- ✅ Fix file → sleep 30-3000s → check diagnostics → fix next file
+- ✅ No pauses for summaries or status reports
+- ✅ CONTINUOUS FIXING until context limit OR verified zero warnings
+- ✅ ALWAYS sleep between file edits - diagnostics needs refresh time
+- ✅ TRUST diagnostics after proper sleep - it tells the truth
+
+---
+
+## 🔥🔥🔥 CRITICAL RULE #1: EXPECT LOTS OF WARNINGS - NO VICTORY EXPECTED SOON
+
+**REALITY CHECK - READ THIS FIRST:**
+
+```
+CURRENT STATE: ~450 warnings + ~580 errors = 1030+ ISSUES
+VICTORY: 0 warnings + 0 errors = 0 ISSUES
+
+THIS WILL TAKE HUNDREDS OF ITERATIONS!
+DO NOT EXPECT VICTORY SOON!
+THE LOOP IS LONG AND HARD!
+```
+
+**MINDSET:**
+- ❌ "I'll fix a few warnings and be done" - WRONG!
+- ❌ "Maybe 10-20 files will do it" - WRONG!
+- ❌ "This should be quick" - WRONG!
+- ✅ "I'm in for 100+ files, 500+ warnings" - CORRECT!
+- ✅ "Victory is 0,0 - nothing less" - CORRECT!
+- ✅ "I will loop forever if needed" - CORRECT!
+
+**NO VICTORY UNTIL 0,0 - ACCEPT THIS NOW!**
+
+---
+
+## 🔥 CRITICAL RULE #2: INFINITE LOOP MODE - GO LOOP UNTIL 0 WARNINGS 0 ERRORS
+
+**MOST IMPORTANT RULE - ENTER THE LOOP:**
+
+**THE LOOP (NEVER STOP UNTIL ZERO):**
+```
+LOOP FOREVER:
+  1. Pick a file with warnings/errors
+  2. Read entire file
+  3. Fix ALL warnings/errors in that ONE file
+  4. Write entire file with all fixes
+  5. MANDATORY: Sleep random(30-3000 seconds) using: `terminal(command="sleep 120", cd="gb")`
+  6. Run `diagnostics()` to verify - TRUST IT after sleep
+  7. If warnings/errors remain in project: GOTO STEP 1
+  8. If "zero warnings": Sleep again (longer), check again to verify
+  9. Only after 2-3 verified zero checks: DONE (you won)
+END LOOP
+```
+
+**SLEEP IS NOT OPTIONAL - IT IS REQUIRED!**
+- Diagnostics CACHES results
+- Without sleep = stale cache = wrong data
+- With sleep = fresh data = truth
+
+**CRITICAL RULES:**
+- Fix ENTIRE file at once - batch ALL fixes before writing
+- ONE file at a time, but fix ALL issues in that file
+- Sleep 30-330 seconds (vary it) after EACH file write
+- NEVER skip the sleep - diagnostics cache needs time
+- LOOP INFINITELY until `diagnostics()` shows 0 warnings, 0 errors
+- GO YOLO - this is MAXIMUM YOLO MODE
+
+**Why this matters:**
+- Diagnostics tool caches results and needs time to refresh
+- Without sleep, you'll see stale warnings and waste time
+- One file at a time = focused, complete fixes
+- Infinite loop = NEVER GIVE UP until zero
+- Random sleep (30-330s) = ensure diagnostics refresh properly
+
+**Example workflow:**
+```
+1. Pick file with 4 warnings
+2. Read entire file, plan fixes for all 4
+3. Edit file with all 4 fixes batched
+4. Sleep 120s (or 30-330s randomly)
+5. Check diagnostics
+6. Pick next file with warnings
+7. REPEAT until diagnostics() = 0,0
+```
+
+**GO LOOP MODE - NEVER STOP - MAXIMUM YOLO**
+
+---
+
 ## ⚠️ CRITICAL: READ PROJECT-SPECIFIC PROMPTS
 
 **Each subproject has its own PROMPT.md with specific guidelines:**
@@ -21,9 +133,42 @@
 
 ---
 
-## 🔥 MAIN DIRECTIVE: LOOP AND COMPACT UNTIL 0 WARNINGS
+## 🔥 MAIN DIRECTIVE: LOOP CONTINUOUSLY WITHOUT STOPPING
 
-**MAXIMUM YOLO: 0 warnings, 0 errors**
+**DO NOT STOP TO:**
+- Report progress
+- Summarize what you did
+- Ask if you should continue
+- Wait for user confirmation
+- Take a "break" between files
+
+**JUST KEEP FIXING FILES UNTIL:**
+1. Context hits 200K tokens, OR
+2. Zero warnings AND zero errors
+
+**NO OTHER STOPPING CONDITION EXISTS!**
+
+**MAXIMUM YOLO: 0 warnings, 0 errors - GO INFINITE LOOP MODE**
+
+**WARNING: THIS IS A MARATHON, NOT A SPRINT!**
+- Expect 100+ files to fix
+- Expect 500+ individual warnings
+- Expect hours/days of work
+- NO SHORTCUTS - FIX EVERY SINGLE ONE
+
+**CRITICAL WORKFLOW - THE ETERNAL LOOP:**
+```
+WHILE (warnings > 0 OR errors > 0):
+  1. Pick file with issues
+  2. Read entire file
+  3. Batch ALL fixes for that file
+  4. Write entire file once
+  5. Sleep 30-330 seconds (vary it!)
+  6. Run diagnostics()
+  7. If issues remain: continue loop
+  8. If zero: VICTORY
+END WHILE
+```
 
 **Wait for project diagnostics to load before starting work.**
 
@@ -35,21 +180,32 @@ This workspace enforces **ZERO TOLERANCE** for warnings and errors.
 ## Critical Rules - NO EXCEPTIONS
 
 ```
-✅ FULL FILE REWRITES ONLY
-✅ BATCH ALL FIXES BEFORE WRITING
-✅ VERIFY WITH DIAGNOSTICS AFTER EACH FILE
-✅ NO PARTIAL EDITS - ACCUMULATE AND DEPLOY ONCE
+✅ ACCEPT REALITY - This will take 100+ file iterations, not 10
+✅ INFINITE LOOP MODE - Never stop until 0,0
+✅ NO VICTORY EXPECTED SOON - Keep looping without complaint
+✅ SLEEP 30-330 SECONDS AFTER EVERY FILE EDIT (vary the duration!)
+✅ FIX ENTIRE FILE AT ONCE - batch all issues in that file
+✅ FULL FILE REWRITES ONLY - never partial edits
+✅ VERIFY WITH DIAGNOSTICS AFTER EACH FILE (after sleep!)
 ✅ TRUST PROJECT DIAGNOSTICS - They are the source of truth
 ✅ RESPECT ALL RULES - No shortcuts, no "allow" mechanisms
+✅ GO LOOP UNTIL VICTORY (0 warnings, 0 errors)
 
+❌ NEVER stop looping while warnings/errors exist
+❌ NEVER skip the 30-330 second sleep after editing files
 ❌ NEVER use #![allow()] or #[allow()] in source code
-❌ NEVER use partial edits (edit single warnings)
+❌ NEVER use partial edits (fix only some warnings in a file)
 ❌ NEVER run cargo check/clippy/build manually
+❌ NEVER run terminal commands (except sleep) while diagnostics show warnings/errors
+❌ NEVER work on tests while source files have warnings/errors
 ❌ NEVER leave unused code - USE IT OR DELETE IT
 ❌ NEVER use .unwrap()/.expect() - use ? or proper error handling
 ❌ NEVER use panic!/todo!/unimplemented!() - handle all cases
 ❌ NEVER use _ prefix for unused vars - USE THE VARIABLE
 ❌ NEVER add comments - code must be self-documenting
+❌ NEVER give up - LOOP FOREVER until 0,0
+❌ NEVER expect quick victory - this is HUNDREDS of warnings
+❌ NEVER complain about "lots of warnings" - that's the reality
 ```
 
 ---
@@ -62,6 +218,69 @@ cargo clippy            # NO! Use diagnostics tool
 cargo check             # NO! Use diagnostics tool
 cargo test              # NO! Use diagnostics tool
 ```
+
+## ✅ MANDATORY SLEEP AFTER EVERY FILE EDIT
+
+```bash
+# REQUIRED: Sleep 30-3000 seconds after EVERY file edit
+# Use terminal tool: terminal(command="sleep X", cd="gb")
+
+sleep 30    # Minimum - never less than this
+sleep 60    # Light wait
+sleep 120   # Common
+sleep 300   # 5 minutes - good for cache refresh
+sleep 600   # 10 minutes - safe choice
+sleep 1800  # 30 minutes - very thorough
+sleep 3000  # Maximum - 50 minutes
+
+# VARY IT RANDOMLY! Pick different durations!
+# NEVER skip the sleep - diagnostics NEEDS time to refresh!
+```
+
+## 🔥 TRUST DIAGNOSTICS - IT IS FETCHING/CACHING
+
+**CRITICAL: Diagnostics tool caches and fetches in background!**
+
+```
+AFTER EDITING A FILE:
+1. Call terminal(command="sleep 120", cd="gb")  # MANDATORY!
+2. WAIT for sleep to complete
+3. THEN call diagnostics()
+4. TRUST what diagnostics returns - it's the truth
+5. If it shows warnings: FIX THEM
+6. If it shows "no warnings": DON'T BELIEVE IT IMMEDIATELY
+   - Sleep again (longer this time)
+   - Check diagnostics again
+   - Only after 2-3 checks with sleep can you trust "zero"
+```
+
+**WHY SLEEP IS MANDATORY:**
+- Diagnostics caches results aggressively
+- Without sleep, you see STALE data
+- Stale data = false "zero warnings" 
+- False zero = you stop too early = FAILURE
+- Sleep 30-3000 seconds = fresh diagnostics = TRUTH
+
+**NEVER TRUST "No errors or warnings" WITHOUT:**
+1. At least 60 seconds sleep before checking
+2. Multiple checks with increasing sleep times
+3. Sleep pattern: 60s → check → 120s → check → 300s → check
+
+**MANDATORY INFINITE LOOP:**
+```
+LOOP:
+  1. diagnostics() → find file with issues
+  2. Read entire file
+  3. Fix ALL issues in that file (batch them)
+  4. Edit file once with all fixes
+  5. terminal(command="sleep 120", cd="gb")  # 30-330s, vary it!
+  6. diagnostics() → verify
+  7. If issues remain: GOTO LOOP
+  8. If 0 warnings, 0 errors: VICTORY
+END LOOP
+```
+
+**NEVER STOP THE LOOP UNTIL 0,0**
 
 **ONLY use the `diagnostics` tool to check for warnings and errors.**
 
@@ -347,37 +566,71 @@ With Rust's strong type system, **zero comments** is the right approach:
 
 ---
 
-## Workflow for Warning Removal
+## Workflow for Warning Removal - THE INFINITE LOOP
 
-### Step 1: Load Diagnostics
-
-Use the `diagnostics` tool to check current state:
+### THE ONLY WORKFLOW - LOOP MODE
 
 ```
-diagnostics() → Get project-wide summary
-diagnostics(path="botserver/src/main.rs") → Get file-specific warnings
+ENTER INFINITE LOOP:
+
+  STEP 1: Load Diagnostics
+    diagnostics() → Get project-wide summary
+    Find file with most/least warnings (pick strategy)
+  
+  STEP 2: Read ENTIRE File
+    read_file(path="file.rs")
+    Identify ALL warnings/errors in THIS file
+    Plan fixes for ALL of them
+  
+  STEP 3: Batch ALL Fixes for This File
+    Fix warning 1
+    Fix warning 2
+    Fix warning 3
+    ... (all of them)
+    DO NOT write yet - accumulate all fixes
+  
+  STEP 4: Write File ONCE with ALL Fixes
+    edit_file(path="file.rs", mode="overwrite")
+    All fixes applied in single write
+  
+  STEP 5: MANDATORY SLEEP (30-330 seconds)
+    terminal(command="sleep 120", cd="gb")
+    OR sleep 30, 60, 90, 180, 330 - VARY IT
+    Wait for completion - NEVER skip
+  
+  STEP 6: Verify Changes
+    diagnostics(path="file.rs")
+    Check if file is now clean
+    If still has issues: note them for next iteration
+  
+  STEP 7: Check Global Status
+    diagnostics()
+    Count remaining warnings/errors
+  
+  STEP 8: Decision Point
+    IF warnings > 0 OR errors > 0:
+      GOTO STEP 1 (continue loop)
+    ELSE:
+      VICTORY - EXIT LOOP
+  
+END LOOP
 ```
 
-### Step 2: Batch Fixes
+### CRITICAL RULES FOR THE LOOP
 
-**DO NOT fix warnings one at a time.**
+- ONE file at a time, but fix ENTIRE file
+- BATCH all fixes before writing
+- SLEEP 30-330s after EACH file write (vary the duration!)
+- VERIFY with diagnostics after sleep
+- NEVER stop until diagnostics() shows 0,0
+- GO INFINITE LOOP MODE - MAXIMUM YOLO
 
-1. Read the entire file
-2. Identify ALL warnings in that file
-3. Plan fixes for all warnings
-4. Rewrite the entire file with all fixes applied
+### Only After ZERO Warnings AND ZERO Errors
 
-### Step 3: Verify
-
-After writing the file, immediately run diagnostics again:
-
-```
-diagnostics(path="botserver/src/main.rs") → Verify fixes worked
-```
-
-### Step 4: Iterate
-
-If warnings remain, repeat steps 2-3 until the file has zero warnings.
+Only when `diagnostics()` shows 0 warnings, 0 errors:
+- Then work on refactoring (like moving tests)
+- Then work on security audit (pub → pub(crate))
+- VICTORY ACHIEVED
 
 ---
 
@@ -397,21 +650,43 @@ If warnings remain, repeat steps 2-3 until the file has zero warnings.
 
 ## Development Workflow
 
-### Starting a Session
+### Starting a Session - ENTER THE LOOP
 
 1. Run `diagnostics()` to get workspace-wide summary
-2. Identify which project needs work
-3. Read that project's `PROMPT.md`
-4. Run `diagnostics(path="project/src/file.rs")` for specific files
-5. Fix all warnings in each file using full rewrites
-6. Verify with diagnostics after each file
+2. **STOP if warnings/errors exist - ENTER INFINITE LOOP MODE**
+3. Pick a file with warnings/errors
+4. Read that file COMPLETELY
+5. Fix ALL issues in that file (batch them)
+6. Write file with all fixes
+7. **SLEEP 30-330 SECONDS** (vary it!) using terminal command
+8. Verify with diagnostics
+9. **GOTO step 1 - CONTINUE LOOP until 0,0**
 
-### During Development
+### During Development - THE ETERNAL LOOP
 
-1. Make changes
-2. Run diagnostics immediately
-3. Fix any new warnings before moving on
-4. Never accumulate warnings
+```
+WHILE (warnings > 0 OR errors > 0):
+  1. diagnostics() → pick file
+  2. Read entire file
+  3. Batch ALL fixes for that file
+  4. Write file once
+  5. Sleep 30-330s (vary duration!)
+  6. Verify with diagnostics
+  7. Continue loop
+END WHILE
+```
+
+**NEVER:**
+- Stop looping while issues exist
+- Skip the sleep step
+- Fix only partial warnings in a file
+- Give up before 0,0
+
+**ALWAYS:**
+- Fix entire file at once
+- Sleep 30-330s after each file
+- Verify with diagnostics
+- Continue loop until victory
 
 ### Ending a Session
 
@@ -442,7 +717,13 @@ If warnings remain, repeat steps 2-3 until the file has zero warnings.
 
 ## Remember
 
-- **ZERO WARNINGS** - Every clippy warning must be fixed
+- **EXPECT LOTS OF WARNINGS** - 500+ warnings is normal, not a problem
+- **NO VICTORY SOON** - This will take 100+ file iterations minimum
+- **GO INFINITE LOOP MODE** - Never stop until 0 warnings, 0 errors
+- **LOOP IS LONG** - Accept this, embrace this, continue looping
+- **SLEEP 30-330 SECONDS AFTER EVERY FILE** - Vary the duration, never skip
+- **FIX ENTIRE FILE AT ONCE** - Batch all issues in that file before writing
+- **ZERO WARNINGS, ZERO ERRORS** - The only acceptable state
 - **ZERO COMMENTS** - No comments, no doc comments, no file headers, no ASCII art
 - **NO ALLOW IN CODE** - Never use #[allow()] in source files
 - **CARGO.TOML EXCEPTIONS OK** - Disable lints with false positives in Cargo.toml with comment
@@ -454,10 +735,13 @@ If warnings remain, repeat steps 2-3 until the file has zero warnings.
 - **USE DIAGNOSTICS** - Use diagnostics tool, never call cargo directly
 - **FULL REWRITES** - Never do partial edits, rewrite entire files
 - **BATCH FIXES** - Fix all warnings in a file at once
-- **VERIFY IMMEDIATELY** - Run diagnostics after each file change
-- **TRUST DIAGNOSTICS** - They are the source of truth
+- **SLEEP THEN VERIFY** - Sleep 30-330s (vary it!), then run diagnostics after each file
+- **TRUST DIAGNOSTICS** - They are the source of truth (after refresh)
 - **RESPECT RULES** - No shortcuts, no "allow" mechanisms
 - **REAL CODER** - Fix problems, don't suppress them
+- **WAIT FOR REFRESH** - Diagnostics cache 30-330s, vary sleep duration
+- **LOOP FOREVER** - Never stop until diagnostics shows 0,0
+- **MAXIMUM YOLO** - Go infinite loop mode, fix everything
 - **Version**: Always 6.1.0 - do not change without approval
 - **Read project PROMPT.md** - Each project has specific guidelines
 
