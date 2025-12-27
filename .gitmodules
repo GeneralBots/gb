@@ -1,0 +1,42 @@
+[submodule "botapp"]
+	path = botapp
+	url = https://alm.pragmatismo.com.br/GeneralBots/botapp.git
+
+[submodule "botserver"]
+	path = botserver
+	url = https://alm.pragmatismo.com.br/GeneralBots/botserver.git
+
+[submodule "botlib"]
+	path = botlib
+	url = https://alm.pragmatismo.com.br/GeneralBots/botlib.git
+
+[submodule "botui"]
+	path = botui
+	url = https://alm.pragmatismo.com.br/GeneralBots/botui.git
+
+[submodule "botbook"]
+	path = botbook
+	url = https://alm.pragmatismo.com.br/GeneralBots/botbook.git
+
+[submodule "bottest"]
+	path = bottest
+	url = https://alm.pragmatismo.com.br/GeneralBots/bottest.git
+
+[submodule "botdevice"]
+	path = botdevice
+	url = https://alm.pragmatismo.com.br/GeneralBots/botdevice.git
+
+[submodule "botmodels"]
+	path = botmodels
+	url = https://alm.pragmatismo.com.br/GeneralBots/botmodels.git
+
+[submodule "botplugin"]
+	path = botplugin
+	url = https://alm.pragmatismo.com.br/GeneralBots/botplugin.git
+
+[submodule "bottemplates"]
+	path = bottemplates
+	url = https://alm.pragmatismo.com.br/GeneralBots/bottemplates.git
+[submodule ".github"]
+	path = .github
+	url = https://alm.pragmatismo.com.br/GeneralBots/.github.git

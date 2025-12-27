@@ -1,36 +1,38 @@
-.tmp*
-.tmp/*
-*.log
-target*
-.env
-*.env
-work
+# Build artifacts
+target/
 *.out
-bin
-botserver-stack
+bin/
+
+# Logs
+*.log
 *logfile*
 *-log*
-docs/book
+
+# Temporary files
+.tmp*
+.tmp/*
+
+# Environment files
+.env
+*.env
+
+# Work directories
+work/
+
+# Redis
 *.rdb
+
+# Documentation build
+docs/book
+
+# Installers (keep gitkeep)
 botserver-installers/*
 !botserver-installers/.gitkeep
 
-# Subproject directories (have their own git repos)
-botapp/
-botserver/
-botlib/
-botui/
-botbook/
-bottest/
-botdevice/
-botmodels/
-botplugin/
-bottemplates/
-
-# IDE/Editor
+# IDE/Editor settings (local only)
 .vscode/
 .zed/
-.github/
+.idea/
 
-# Build artifacts
+# Lock file (regenerated from Cargo.toml)
 Cargo.lock
