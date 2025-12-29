@@ -36,69 +36,6 @@ similar_names = "allow"
 # Disabled: doc comments removed per zero-comments policy
 missing_errors_doc = "allow"
 missing_panics_doc = "allow"
-# Disabled: not all public functions need #[must_use]
-must_use_candidate = "allow"
-# Disabled: functions can be long if well-structured
-too_many_lines = "allow"
-# Disabled: complex functions are sometimes necessary
-cognitive_complexity = "allow"
-# Disabled: many arguments needed for complex constructors
-too_many_arguments = "allow"
-# Disabled: module organization is intentional
-module_name_repetitions = "allow"
-# Disabled: struct organization is intentional
-struct_excessive_bools = "allow"
-# Disabled: explicit returns sometimes clearer
-needless_return = "allow"
-# Disabled: if-let vs match is stylistic
-single_match_else = "allow"
-# Disabled: option/result chains are readable
-option_if_let_else = "allow"
-# Disabled: explicit ref patterns sometimes clearer
-redundant_closure_for_method_calls = "allow"
-# Disabled: cast precision loss acceptable in controlled cases
-cast_possible_truncation = "allow"
-cast_sign_loss = "allow"
-cast_precision_loss = "allow"
-cast_possible_wrap = "allow"
-# Disabled: wildcard imports used intentionally
-wildcard_imports = "allow"
-# Disabled: some patterns require manual implementations
-derivable_impls = "allow"
-# Disabled: inline format args style preference
-uninlined_format_args = "allow"
-# Disabled: default trait not always appropriate
-default_trait_access = "allow"
-# Disabled: redundant else can be clearer
-redundant_else = "allow"
-# Disabled: unit patterns in matches intentional
-ignored_unit_patterns = "allow"
-# Disabled: manual string operations sometimes clearer
-manual_string_new = "allow"
-# Disabled: items after statements acceptable
-items_after_statements = "allow"
-# Disabled: clone on copy types sometimes intentional
-clone_on_copy = "allow"
-# Disabled: map_unwrap_or style preference
-map_unwrap_or = "allow"
-# Disabled: unnecessary wraps sometimes for API consistency
-unnecessary_wraps = "allow"
-# Disabled: used underscore binding acceptable
-used_underscore_binding = "allow"
-# Disabled: implicit hasher acceptable
-implicit_hasher = "allow"
-# Disabled: return self not always appropriate
-return_self_not_must_use = "allow"
-# Disabled: ref binding style preference
-ref_binding_to_reference = "allow"
-# Disabled: needless borrow sometimes clearer
-needless_borrow = "allow"
-# Disabled: explicit iter acceptable
-explicit_iter_loop = "allow"
-# Disabled: explicit into iter acceptable
-explicit_into_iter_loop = "allow"
-# Disabled: false positives with async mutexes that must be held across await points
-significant_drop_tightening = "allow"
 
 
 [profile.release]
