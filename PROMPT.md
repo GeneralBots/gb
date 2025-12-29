@@ -145,6 +145,45 @@ gb/
 
 ---
 
+## 🚀 BOTSERVER RUN LOOP - MANDATORY FOR RUNTIME FIXES
+
+```
+LOOP UNTIL botserver starts successfully:
+  1. cargo build -p botserver 2>&1 | tail -20
+  2. IF build fails → fix errors → CONTINUE LOOP
+  3. cd botserver && timeout 30 ../target/debug/botserver --noconsole 2>&1 | head -80
+  4. Analyze output for errors/warnings
+  5. Fix issues in code
+  6. CONTINUE LOOP
+END LOOP
+```
+
+### Run Commands
+```bash
+# Build botserver only
+cargo build -p botserver 2>&1 | tail -20
+
+# Run from botserver directory (required for .env and botserver-stack paths)
+cd botserver && timeout 30 ../target/debug/botserver --noconsole 2>&1 | head -80
+
+# Check specific component logs
+cat botserver/botserver-stack/logs/drive/minio.log
+cat botserver/botserver-stack/logs/vault/vault.log
+
+# Test vault credentials manually
+cd botserver && export $(cat .env | grep -v '^#' | xargs) && \
+  ./botserver-stack/bin/vault/vault kv get -format=json secret/gbo/drive
+```
+
+### Key Paths (relative to gb/)
+- Binary: `target/debug/botserver`
+- Run from: `botserver/` directory
+- Env file: `botserver/.env`
+- Stack: `botserver/botserver-stack/`
+- Logs: `botserver/botserver-stack/logs/<component>/`
+
+---
+
 ## Development Workflow
 
 ### The Loop
