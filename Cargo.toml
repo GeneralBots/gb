@@ -23,17 +23,11 @@ nursery = { level = "warn", priority = -1 }
 cargo = { level = "warn", priority = -1 }
 panic = "warn"
 todo = "warn"
-# Disabled: has false positives for functions with mut self, heap types (Vec, String)
 missing_const_for_fn = "allow"
-# Disabled: Axum handlers and framework requirements need owned types
 needless_pass_by_value = "allow"
-# Disabled: transitive dependencies we cannot control
 multiple_crate_versions = "allow"
-# Disabled: when async traits require non-Send futures
 future_not_send = "allow"
-# Disabled: intentional similar names for related concepts (e.g. title_bg/title_fg)
 similar_names = "allow"
-# Disabled: doc comments removed per zero-comments policy
 missing_errors_doc = "allow"
 missing_panics_doc = "allow"
 
