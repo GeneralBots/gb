@@ -87,15 +87,63 @@ validate_table_name(&safe_table)?;
 ## ABSOLUTE PROHIBITIONS
 
 ```
-❌ NEVER use .unwrap() or .expect() in production code
+❌ NEVER use .unwrap() or .expect() in production code (tests OK)
 ❌ NEVER use panic!(), todo!(), unimplemented!()
 ❌ NEVER use Command::new() directly - use SafeCommand
 ❌ NEVER return raw error strings to HTTP clients
-❌ NEVER use #[allow()] in source code
+❌ NEVER use #[allow()] in source code - FIX the code instead
+❌ NEVER add lint exceptions to Cargo.toml - FIX the code instead
 ❌ NEVER use _ prefix for unused variables - DELETE or USE them
 ❌ NEVER leave unused imports or dead code
 ❌ NEVER add comments - code must be self-documenting
 ❌ NEVER run cargo check/clippy/build - use diagnostics tool
+❌ NEVER modify Cargo.toml lints section
+```
+
+---
+
+## FIXING WARNINGS - DO NOT SUPPRESS
+
+When you encounter warnings, FIX them properly:
+
+### Dead Code
+```rust
+// ❌ WRONG - suppressing
+#[allow(dead_code)]
+struct Unused { field: String }
+
+// ✅ CORRECT - delete unused code or use it
+// DELETE the struct entirely, or add code that uses it
+```
+
+### Unused Variables
+```rust
+// ❌ WRONG - underscore prefix
+fn foo(_unused: String) { }
+
+// ✅ CORRECT - remove parameter or use it
+fn foo() { }  // remove if not needed
+fn foo(used: String) { println!("{used}"); }  // or use it
+```
+
+### Unreachable Code
+```rust
+// ❌ WRONG - allow attribute
+#[allow(unreachable_code)]
+{ unreachable_statement(); }
+
+// ✅ CORRECT - restructure code so it's reachable or delete it
+```
+
+### Unused Async
+```rust
+// ❌ WRONG - allow attribute  
+#[allow(clippy::unused_async)]
+async fn handler() { sync_code(); }
+
+// ✅ CORRECT - add .await or remove async
+fn handler() { sync_code(); }  // remove async if not needed
+async fn handler() { some_future.await; }  // or add await
 ```
 
 ---
@@ -165,14 +213,6 @@ cargo build -p botserver 2>&1 | tail -20
 
 # Run from botserver directory (required for .env and botserver-stack paths)
 cd botserver && timeout 30 ../target/debug/botserver --noconsole 2>&1 | head -80
-
-# Check specific component logs
-cat botserver/botserver-stack/logs/drive/minio.log
-cat botserver/botserver-stack/logs/vault/vault.log
-
-# Test vault credentials manually
-cd botserver && export $(cat .env | grep -v '^#' | xargs) && \
-  ./botserver-stack/bin/vault/vault kv get -format=json secret/gbo/drive
 ```
 
 ### Key Paths (relative to gb/)
@@ -204,12 +244,39 @@ cd botserver && export $(cat .env | grep -v '^#' | xargs) && \
 
 ---
 
+## 📋 CONTINUATION PROMPT FOR NEXT SESSION
+
+When starting a new session, use this prompt:
+
+```
+Continue working on gb/ workspace. Follow PROMPT.md strictly:
+
+1. Run diagnostics() first
+2. Fix ALL warnings and errors - NO #[allow()] attributes
+3. Delete unused code, don't suppress warnings
+4. Remove unused parameters, don't prefix with _
+5. Sleep after edits, verify with diagnostics
+6. Loop until 0 warnings, 0 errors
+
+Current focus areas needing fixes:
+- botserver/src/core/package_manager/installer.rs - unreachable code
+- botserver/src/meet/mod.rs - unused async/parameters
+- botserver/src/settings/rbac_ui.rs - Display trait issues
+- Any remaining #[allow()] attributes in source files
+
+Remember: FIX code, never suppress warnings!
+```
+
+---
+
 ## Remember
 
 - **ZERO WARNINGS, ZERO ERRORS** - The only acceptable state
+- **FIX, DON'T SUPPRESS** - No #[allow()], no Cargo.toml lint exceptions
 - **SECURITY FIRST** - No unwrap, no raw errors, no direct commands
 - **SLEEP AFTER EDITS** - Diagnostics needs 30-300s to refresh
 - **FIX ENTIRE FILE** - Batch all issues before writing
 - **TRUST DIAGNOSTICS** - Source of truth after sleep
 - **LOOP FOREVER** - Never stop until 0,0
+- **DELETE DEAD CODE** - Don't keep unused code around
 - **Version 6.1.0** - Do not change without approval
