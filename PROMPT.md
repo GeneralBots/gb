@@ -1,11 +1,33 @@
 # General Bots Workspace - Master Development Guide
 
-**Version:** 6.1.0 - DO NOT CHANGE  
+**Version:** 6.2.0 - DO NOT CHANGE  
 **Project:** General Bots Workspace (Rust Monorepo)
 
 ---
 
-## 🔥 CRITICAL: INFINITE LOOP MODE
+## 🔥 CRITICAL: OFFLINE-FIRST ERROR FIXING
+
+### Primary Mode: OFFLINE Batch Fix (PREFERRED)
+
+When given an error.out file or error list or in last instance cargo build once:
+
+```
+1. Read the ENTIRE error list first
+2. Group errors by file
+3. For EACH file with errors:
+   a. read_file() → understand context
+   b. Fix ALL errors in that file
+   c. edit_file() → write once
+4. Move to next file
+5. REPEAT until ALL errors addressed
+6. ONLY THEN → compile/diagnostics to verify
+```
+
+**NEVER run cargo build/check/clippy DURING fixing**  
+**NEVER run diagnostics() DURING fixing**  
+**Fix ALL errors OFFLINE first, verify ONCE at the end**
+
+### Secondary Mode: Interactive Loop (when no error list)
 
 ```
 LOOP UNTIL (0 warnings AND 0 errors):
@@ -18,8 +40,6 @@ LOOP UNTIL (0 warnings AND 0 errors):
   7. CONTINUE LOOP
 END LOOP
 ```
-
-**NEVER STOP** while warnings/errors exist. **NEVER SKIP** the sleep.
 
 ---
 
@@ -96,8 +116,9 @@ validate_table_name(&safe_table)?;
 ❌ NEVER use _ prefix for unused variables - DELETE or USE them
 ❌ NEVER leave unused imports or dead code
 ❌ NEVER add comments - code must be self-documenting
-❌ NEVER run cargo check/clippy/build - use diagnostics tool
-❌ NEVER modify Cargo.toml lints section
+❌ NEVER run cargo check/clippy/build DURING offline fixing
+❌ NEVER run diagnostics() DURING offline fixing
+❌ NEVER modify Cargo.toml lints section!
 ```
 
 ---
@@ -126,6 +147,12 @@ fn foo() { }  // remove if not needed
 fn foo(used: String) { println!("{used}"); }  // or use it
 ```
 
+### Unused Fields in Pattern Match
+```rust
+// ✅ CORRECT - use .. to ignore unused fields
+WhiteboardOperation::RotateShape { shape_id, .. } => { }
+```
+
 ### Unreachable Code
 ```rust
 // ❌ WRONG - allow attribute
@@ -144,6 +171,15 @@ async fn handler() { sync_code(); }
 // ✅ CORRECT - add .await or remove async
 fn handler() { sync_code(); }  // remove async if not needed
 async fn handler() { some_future.await; }  // or add await
+```
+
+### Type Mismatches
+```rust
+// ✅ CORRECT - use proper type conversions
+value as i64                    // simple cast
+f64::from(value)               // safe conversion
+Some(value)                    // wrap in Option
+value.unwrap_or(default)       // unwrap with default
 ```
 
 ---
@@ -193,7 +229,49 @@ gb/
 
 ---
 
-## 🚀 BOTSERVER RUN LOOP - MANDATORY FOR RUNTIME FIXES
+## 🚀 OFFLINE ERROR FIXING WORKFLOW
+
+### Step 1: Analyze Error List
+```
+- Read entire error.out or error list or cargo build once
+- Group by file path
+- Note line numbers and error types
+- Understand dependencies between errors
+```
+
+### Step 2: Fix Each File
+```
+For each file:
+1. read_file(path, start_line, end_line) - get context
+2. Understand the struct/function signatures
+3. Fix ALL errors in that file at once
+4. edit_file() - single write operation
+```
+
+### Step 3: Common Error Patterns
+
+| Error | Fix |
+|-------|-----|
+| `expected i64, found u64` | `value as i64` |
+| `expected Option<T>, found T` | `Some(value)` |
+| `expected T, found Option<T>` | `value.unwrap_or(default)` |
+| `cannot multiply f32 by f64` | `f64::from(f32_val) * f64_val` |
+| `no field X on type Y` | Check struct definition, use correct field |
+| `no variant X found` | Check enum definition, use correct variant |
+| `function takes N arguments` | Match function signature |
+| `cannot find function` | Add missing function or fix import |
+| `unused variable` | Delete or use with `..` in patterns |
+| `unused import` | Delete the import line |
+| `cannot move out of X because borrowed` | Use scoping `{ }` to limit borrow |
+
+### Step 4: Verify (ONLY AT END)
+```bash
+cargo build -p botserver 2>&1 | tee error.out
+```
+
+---
+
+## 🚀 BOTSERVER RUN LOOP - FOR RUNTIME FIXES
 
 ```
 LOOP UNTIL botserver starts successfully:
@@ -206,15 +284,6 @@ LOOP UNTIL botserver starts successfully:
 END LOOP
 ```
 
-### Run Commands
-```bash
-# Build botserver only
-cargo build -p botserver 2>&1 | tail -20
-
-# Run from botserver directory (required for .env and botserver-stack paths)
-cd botserver && timeout 30 ../target/debug/botserver --noconsole 2>&1 | head -80
-```
-
 ### Key Paths (relative to gb/)
 - Binary: `target/debug/botserver`
 - Run from: `botserver/` directory
@@ -224,20 +293,11 @@ cd botserver && timeout 30 ../target/debug/botserver --noconsole 2>&1 | head -80
 
 ---
 
-## Development Workflow
+## Quick Reference
 
-### The Loop
-1. `diagnostics()` → find file with issues
-2. `read_file()` → read entire file
-3. Fix ALL issues in that file (batch them)
-4. `edit_file(mode="overwrite")` → write once
-5. `terminal(command="sleep 120", cd="gb")` → MANDATORY
-6. `diagnostics()` → verify fixes
-7. **REPEAT until 0 warnings, 0 errors**
-
-### Quick Reference
 - Read: `read_file(path="botserver/src/main.rs")`
-- Edit: `edit_file(path="...", mode="overwrite")`
+- Read section: `read_file(path="...", start_line=100, end_line=200)`
+- Edit: `edit_file(path="...", mode="edit")`
 - Find: `find_path(glob="**/*.rs")`
 - Search: `grep(regex="pattern")`
 - Check: `diagnostics()` or `diagnostics(path="file.rs")`
@@ -246,8 +306,24 @@ cd botserver && timeout 30 ../target/debug/botserver --noconsole 2>&1 | head -80
 
 ## 📋 CONTINUATION PROMPT FOR NEXT SESSION
 
-When starting a new session, use this prompt:
+### For OFFLINE error fixing:
+```
+Fix all errors in error.out OFFLINE:
 
+1. Read the entire error list first
+2. Group errors by file
+3. Fix ALL errors in each file before moving to next
+4. DO NOT run cargo build or diagnostics until ALL fixes done
+5. Write each file ONCE with all fixes
+
+Follow PROMPT.md strictly:
+- No #[allow()] attributes
+- Delete unused code, don't suppress
+- Use proper type conversions
+- Check struct/enum definitions before fixing
+```
+
+### For interactive fixing:
 ```
 Continue working on gb/ workspace. Follow PROMPT.md strictly:
 
@@ -257,26 +333,19 @@ Continue working on gb/ workspace. Follow PROMPT.md strictly:
 4. Remove unused parameters, don't prefix with _
 5. Sleep after edits, verify with diagnostics
 6. Loop until 0 warnings, 0 errors
-
-Current focus areas needing fixes:
-- botserver/src/core/package_manager/installer.rs - unreachable code
-- botserver/src/meet/mod.rs - unused async/parameters
-- botserver/src/settings/rbac_ui.rs - Display trait issues
-- Any remaining #[allow()] attributes in source files
-
-Remember: FIX code, never suppress warnings!
 ```
 
 ---
 
 ## Remember
 
+- **OFFLINE FIRST** - Fix all errors from list before compiling
 - **ZERO WARNINGS, ZERO ERRORS** - The only acceptable state
 - **FIX, DON'T SUPPRESS** - No #[allow()], no Cargo.toml lint exceptions
 - **SECURITY FIRST** - No unwrap, no raw errors, no direct commands
-- **SLEEP AFTER EDITS** - Diagnostics needs 30-300s to refresh
-- **FIX ENTIRE FILE** - Batch all issues before writing
-- **TRUST DIAGNOSTICS** - Source of truth after sleep
-- **LOOP FOREVER** - Never stop until 0,0
+- **READ BEFORE FIX** - Always understand context first
+- **BATCH BY FILE** - Fix ALL errors in a file at once
+- **WRITE ONCE** - Single edit per file with all fixes
+- **VERIFY LAST** - Only compile/diagnostics after ALL fixes
 - **DELETE DEAD CODE** - Don't keep unused code around
-- **Version 6.1.0** - Do not change without approval
+- **Version 6.2.0** - Do not change without approval
