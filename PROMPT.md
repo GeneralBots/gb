@@ -219,13 +219,58 @@ match x {
 ```
 gb/
 ├── botapp/      # Desktop app (Tauri)
-├── botserver/   # Main server (Axum API)
+├── botserver/   # Main server (Axum API) - port 8088
 ├── botlib/      # Shared library
-├── botui/       # Web UI
+├── botui/       # Web UI server - port 3000
 ├── botbook/     # Documentation
 ├── bottest/     # Integration tests
 └── PROMPT.md    # THIS FILE
 ```
+
+---
+
+## 🖥️ UI Architecture (botui + botserver)
+
+### Two Servers During Development
+
+| Server | Port | Purpose |
+|--------|------|---------|
+| **botui** | 3000 | Serves UI files + proxies API to botserver |
+| **botserver** | 8088 | Backend API + embedded UI fallback |
+
+### How It Works
+
+```
+Browser → localhost:3000 → botui (serves HTML/CSS/JS)
+                        → /api/* proxied to botserver:8088
+                        → /suite/* served from botui/ui/suite/
+```
+
+### Adding New Suite Apps
+
+When adding a new app (e.g., `video`, `learn`):
+
+1. Create folder: `botui/ui/suite/<appname>/`
+2. Add to `SUITE_DIRS` in `botui/src/ui_server/mod.rs`:
+```rust
+const SUITE_DIRS: &[&str] = &[
+    "chat", "mail", "calendar", ...,
+    "video",  // ← add new app here
+    "learn",
+];
+```
+3. Rebuild botui: `cargo build -p botui`
+4. Add menu entry in `botui/ui/suite/index.html`
+
+### Hot Reload
+
+- **UI files (HTML/CSS/JS)**: Edit & refresh browser (no restart)
+- **botui Rust code**: Rebuild + restart botui
+- **botserver Rust code**: Rebuild + restart botserver
+
+### Production (Single Binary)
+
+When `botui/ui/suite/` folder not found, botserver uses **embedded UI** compiled into binary via `rust-embed`.
 
 ---
 
