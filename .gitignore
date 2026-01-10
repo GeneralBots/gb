@@ -28,7 +28,8 @@ docs/book
 # Installers (keep gitkeep)
 botserver-installers/*
 !botserver-installers/.gitkeep
-
+botserver-stack
+TODO*
 # IDE/Editor settings (local only)
 .vscode/
 .zed/
