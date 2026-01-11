@@ -43,6 +43,65 @@ END LOOP
 
 ---
 
+## 🧠 MEMORY MANAGEMENT - KILL PROCESSES BEFORE COMPILE
+
+When compilation fails due to memory issues (process "Killed"), run this cleanup FIRST:
+
+```bash
+pkill -9 cargo; pkill -9 rustc; pkill -9 botserver
+```
+
+Then retry compilation with reduced parallelism:
+
+```bash
+CARGO_BUILD_JOBS=1 cargo check -p botserver 2>&1 | tail -200
+```
+
+**Signs of memory issues:**
+- Process output shows only "Killed"
+- Compilation hangs then terminates
+- No error messages, just killed
+
+**Always kill stale processes before retrying compilation after memory issues.**
+
+---
+
+## 📏 FILE SIZE LIMITS - MANDATORY
+
+### Maximum 1000 Lines Per File
+
+All `.rs` and `.js` files MUST NOT exceed 1000 lines. When a file grows beyond this limit:
+
+1. **Identify logical groups** - Find related functions that can be separated
+2. **Create subdirectory module** - e.g., `handlers/` with multiple files
+3. **Split by responsibility**:
+   - `crud.rs` - Create, Read, Update, Delete operations
+   - `ai.rs` - AI/ML related handlers
+   - `export.rs` - Export/import functionality
+   - `validation.rs` - Validation and comments
+   - `advanced.rs` - Advanced features
+   - `mod.rs` - Re-exports all public items
+4. **Keep files focused** - Each file should have a single responsibility
+5. **Update mod.rs** - Ensure all public items are re-exported
+
+```
+# Example structure for large handler files:
+module/
+├── handlers/
+│   ├── mod.rs      (re-exports)
+│   ├── crud.rs     (~300 lines)
+│   ├── ai.rs       (~100 lines)
+│   ├── export.rs   (~200 lines)
+│   └── advanced.rs (~400 lines)
+├── types.rs
+├── storage.rs
+└── mod.rs
+```
+
+**NEVER let a single file exceed 1000 lines - split proactively at 800 lines**
+
+---
+
 ## 🔐 SECURITY DIRECTIVES - MANDATORY FOR ALL NEW CODE
 
 ### Error Handling - NO PANICS IN PRODUCTION
