@@ -5,64 +5,89 @@
 
 ---
 
-## 🔥 CRITICAL: OFFLINE-FIRST ERROR FIXING
+## 📁 WORKSPACE STRUCTURE
 
-### Primary Mode: OFFLINE Batch Fix (PREFERRED)
+| Crate | Purpose | Port | Tech Stack |
+|-------|---------|------|------------|
+| **botserver** | Main API server, business logic | 8088 | Axum, Diesel, Rhai BASIC |
+| **botui** | Web UI server (dev) + proxy | 3000 | Axum, HTML/HTMX/CSS |
+| **botapp** | Desktop app wrapper | - | Tauri 2 |
+| **botlib** | Shared library | - | Core types, errors |
+| **botbook** | Documentation | - | mdBook |
+| **bottest** | Integration tests | - | tokio-test |
+| **botdevice** | IoT/Device support | - | Rust |
+| **botmodels** | Data models visualization | - | - |
+| **botplugin** | Browser extension | - | JS |
 
-When given an error.out file or error list or in last instance cargo build once:
-
-```
-1. Read the ENTIRE error list first
-2. Group errors by file
-3. For EACH file with errors:
-   a. read_file() → understand context
-   b. Fix ALL errors in that file
-   c. edit_file() → write once
-4. Move to next file
-5. REPEAT until ALL errors addressed
-6. ONLY THEN → compile/diagnostics to verify
-```
-
-**NEVER run cargo build/check/clippy DURING fixing**  
-**NEVER run diagnostics() DURING fixing**  
-**Fix ALL errors OFFLINE first, verify ONCE at the end**
-
-### Secondary Mode: Interactive Loop (when no error list)
-
-```
-LOOP UNTIL (0 warnings AND 0 errors):
-  1. diagnostics() → pick file with issues
-  2. Read entire file
-  3. Fix ALL issues in that file
-  4. Write file once with all fixes
-  5. Sleep 30-300s: terminal(command="sleep 120", cd="gb")
-  6. diagnostics() → verify
-  7. CONTINUE LOOP
-END LOOP
-```
+### Key Paths
+- **Binary:** `target/debug/botserver`
+- **Run from:** `botserver/` directory
+- **Env file:** `botserver/.env`
+- **Stack:** `botserver/botserver-stack/`
+- **UI Files:** `botui/ui/suite/`
 
 ---
 
-## 🧠 MEMORY MANAGEMENT - KILL PROCESSES BEFORE COMPILE
+## 🔥 ERROR FIXING WORKFLOW
 
-When compilation fails due to memory issues (process "Killed"), run this cleanup FIRST:
+### Mode 1: OFFLINE Batch Fix (PREFERRED)
+
+When given error output:
+
+```
+1. Read ENTIRE error list first
+2. Group errors by file
+3. For EACH file with errors:
+   a. View file → understand context
+   b. Fix ALL errors in that file
+   c. Write once with all fixes
+4. Move to next file
+5. REPEAT until ALL errors addressed
+6. ONLY THEN → verify with build/diagnostics
+```
+
+**NEVER run cargo build/check/clippy DURING fixing**  
+**Fix ALL errors OFFLINE first, verify ONCE at the end**
+
+### Mode 2: Interactive Loop
+
+```
+LOOP UNTIL (0 warnings AND 0 errors):
+  1. Run diagnostics → pick file with issues
+  2. Read entire file
+  3. Fix ALL issues in that file
+  4. Write file once with all fixes
+  5. Verify with diagnostics
+  6. CONTINUE LOOP
+END LOOP
+```
+
+### Common Error Patterns
+
+| Error | Fix |
+|-------|-----|
+| `expected i64, found u64` | `value as i64` |
+| `expected Option<T>, found T` | `Some(value)` |
+| `expected T, found Option<T>` | `value.unwrap_or(default)` |
+| `cannot multiply f32 by f64` | `f64::from(f32_val) * f64_val` |
+| `no field X on type Y` | Check struct definition |
+| `no variant X found` | Check enum definition |
+| `function takes N arguments` | Match function signature |
+| `cannot find function` | Add missing function or fix import |
+| `unused variable` | Delete or use with `..` in patterns |
+| `unused import` | Delete the import line |
+| `cannot move out of X because borrowed` | Use scoping `{ }` to limit borrow |
+
+---
+
+## 🧠 MEMORY MANAGEMENT
+
+When compilation fails due to memory issues (process "Killed"):
 
 ```bash
 pkill -9 cargo; pkill -9 rustc; pkill -9 botserver
-```
-
-Then retry compilation with reduced parallelism:
-
-```bash
 CARGO_BUILD_JOBS=1 cargo check -p botserver 2>&1 | tail -200
 ```
-
-**Signs of memory issues:**
-- Process output shows only "Killed"
-- Compilation hangs then terminates
-- No error messages, just killed
-
-**Always kill stale processes before retrying compilation after memory issues.**
 
 ---
 
@@ -70,51 +95,36 @@ CARGO_BUILD_JOBS=1 cargo check -p botserver 2>&1 | tail -200
 
 ### Maximum 1000 Lines Per File
 
-All `.rs` and `.js` files MUST NOT exceed 1000 lines. When a file grows beyond this limit:
+When a file grows beyond this limit:
 
-1. **Identify logical groups** - Find related functions that can be separated
-2. **Create subdirectory module** - e.g., `handlers/` with multiple files
-3. **Split by responsibility**:
-   - `crud.rs` - Create, Read, Update, Delete operations
-   - `ai.rs` - AI/ML related handlers
-   - `export.rs` - Export/import functionality
-   - `validation.rs` - Validation and comments
-   - `advanced.rs` - Advanced features
-   - `mod.rs` - Re-exports all public items
-4. **Keep files focused** - Each file should have a single responsibility
-5. **Update mod.rs** - Ensure all public items are re-exported
-
-```
-# Example structure for large handler files:
-module/
-├── handlers/
-│   ├── mod.rs      (re-exports)
-│   ├── crud.rs     (~300 lines)
-│   ├── ai.rs       (~100 lines)
-│   ├── export.rs   (~200 lines)
-│   └── advanced.rs (~400 lines)
-├── types.rs
-├── storage.rs
-└── mod.rs
-```
+1. **Identify logical groups** - Find related functions
+2. **Create subdirectory module** - e.g., `handlers/`
+3. **Split by responsibility:**
+   - `crud.rs` - Create, Read, Update, Delete
+   - `ai.rs` - AI/ML handlers
+   - `export.rs` - Export/import
+   - `validation.rs` - Validation
+   - `mod.rs` - Re-exports
+4. **Keep files focused** - Single responsibility
+5. **Update mod.rs** - Re-export all public items
 
 **NEVER let a single file exceed 1000 lines - split proactively at 800 lines**
 
 ---
 
-## 🔐 SECURITY DIRECTIVES - MANDATORY FOR ALL NEW CODE
+## 🔐 SECURITY DIRECTIVES - MANDATORY
 
 ### Error Handling - NO PANICS IN PRODUCTION
 
 ```rust
-// ❌ FORBIDDEN - causes panic
+// ❌ FORBIDDEN
 value.unwrap()
 value.expect("message")
 panic!("error")
 todo!()
 unimplemented!()
 
-// ✅ REQUIRED - proper error handling
+// ✅ REQUIRED
 value?
 value.ok_or_else(|| Error::NotFound)?
 value.unwrap_or_default()
@@ -126,10 +136,10 @@ match value { Ok(v) => v, Err(e) => return Err(e.into()) }
 ### Command Execution - USE SafeCommand
 
 ```rust
-// ❌ FORBIDDEN - direct command execution
+// ❌ FORBIDDEN
 Command::new("some_command").arg(user_input).output()
 
-// ✅ REQUIRED - use SafeCommand from security module
+// ✅ REQUIRED
 use crate::security::command_guard::SafeCommand;
 SafeCommand::new("allowed_command")?
     .arg("safe_arg")?
@@ -139,11 +149,11 @@ SafeCommand::new("allowed_command")?
 ### Error Responses - USE ErrorSanitizer
 
 ```rust
-// ❌ FORBIDDEN - leaks internal details
+// ❌ FORBIDDEN
 Json(json!({ "error": e.to_string() }))
 format!("Database error: {}", e)
 
-// ✅ REQUIRED - sanitize errors
+// ✅ REQUIRED
 use crate::security::error_sanitizer::log_and_sanitize;
 let sanitized = log_and_sanitize(&e, "context", None);
 (StatusCode::INTERNAL_SERVER_ERROR, sanitized)
@@ -152,10 +162,10 @@ let sanitized = log_and_sanitize(&e, "context", None);
 ### SQL - USE sql_guard
 
 ```rust
-// ❌ FORBIDDEN - SQL injection risk
+// ❌ FORBIDDEN
 format!("SELECT * FROM {}", user_table)
 
-// ✅ REQUIRED - use sql_guard functions
+// ✅ REQUIRED
 use crate::security::sql_guard::{sanitize_identifier, validate_table_name};
 let safe_table = sanitize_identifier(&user_table);
 validate_table_name(&safe_table)?;
@@ -163,7 +173,7 @@ validate_table_name(&safe_table)?;
 
 ---
 
-## ABSOLUTE PROHIBITIONS
+## ❌ ABSOLUTE PROHIBITIONS
 
 ```
 ❌ NEVER use .unwrap() or .expect() in production code (tests OK)
@@ -175,75 +185,13 @@ validate_table_name(&safe_table)?;
 ❌ NEVER use _ prefix for unused variables - DELETE or USE them
 ❌ NEVER leave unused imports or dead code
 ❌ NEVER add comments - code must be self-documenting
-❌ NEVER run cargo check/clippy/build DURING offline fixing
-❌ NEVER run diagnostics() DURING offline fixing
 ❌ NEVER modify Cargo.toml lints section!
+❌ NEVER use CDN links - all assets must be local
 ```
 
 ---
 
-## FIXING WARNINGS - DO NOT SUPPRESS
-
-When you encounter warnings, FIX them properly:
-
-### Dead Code
-```rust
-// ❌ WRONG - suppressing
-#[allow(dead_code)]
-struct Unused { field: String }
-
-// ✅ CORRECT - delete unused code or use it
-// DELETE the struct entirely, or add code that uses it
-```
-
-### Unused Variables
-```rust
-// ❌ WRONG - underscore prefix
-fn foo(_unused: String) { }
-
-// ✅ CORRECT - remove parameter or use it
-fn foo() { }  // remove if not needed
-fn foo(used: String) { println!("{used}"); }  // or use it
-```
-
-### Unused Fields in Pattern Match
-```rust
-// ✅ CORRECT - use .. to ignore unused fields
-WhiteboardOperation::RotateShape { shape_id, .. } => { }
-```
-
-### Unreachable Code
-```rust
-// ❌ WRONG - allow attribute
-#[allow(unreachable_code)]
-{ unreachable_statement(); }
-
-// ✅ CORRECT - restructure code so it's reachable or delete it
-```
-
-### Unused Async
-```rust
-// ❌ WRONG - allow attribute  
-#[allow(clippy::unused_async)]
-async fn handler() { sync_code(); }
-
-// ✅ CORRECT - add .await or remove async
-fn handler() { sync_code(); }  // remove async if not needed
-async fn handler() { some_future.await; }  // or add await
-```
-
-### Type Mismatches
-```rust
-// ✅ CORRECT - use proper type conversions
-value as i64                    // simple cast
-f64::from(value)               // safe conversion
-Some(value)                    // wrap in Option
-value.unwrap_or(default)       // unwrap with default
-```
-
----
-
-## MANDATORY CODE PATTERNS
+## ✅ MANDATORY CODE PATTERNS
 
 ### Use Self in Impl Blocks
 ```rust
@@ -273,21 +221,6 @@ match x {
 
 ---
 
-## Workspace Structure
-
-```
-gb/
-├── botapp/      # Desktop app (Tauri)
-├── botserver/   # Main server (Axum API) - port 8088
-├── botlib/      # Shared library
-├── botui/       # Web UI server - port 3000
-├── botbook/     # Documentation
-├── bottest/     # Integration tests
-└── PROMPT.md    # THIS FILE
-```
-
----
-
 ## 🖥️ UI Architecture (botui + botserver)
 
 ### Two Servers During Development
@@ -307,17 +240,8 @@ Browser → localhost:3000 → botui (serves HTML/CSS/JS)
 
 ### Adding New Suite Apps
 
-When adding a new app (e.g., `video`, `learn`):
-
 1. Create folder: `botui/ui/suite/<appname>/`
-2. Add to `SUITE_DIRS` in `botui/src/ui_server/mod.rs`:
-```rust
-const SUITE_DIRS: &[&str] = &[
-    "chat", "mail", "calendar", ...,
-    "video",  // ← add new app here
-    "learn",
-];
-```
+2. Add to `SUITE_DIRS` in `botui/src/ui_server/mod.rs`
 3. Rebuild botui: `cargo build -p botui`
 4. Add menu entry in `botui/ui/suite/index.html`
 
@@ -333,115 +257,98 @@ When `botui/ui/suite/` folder not found, botserver uses **embedded UI** compiled
 
 ---
 
-## 🚀 OFFLINE ERROR FIXING WORKFLOW
+## 🎨 FRONTEND STANDARDS
 
-### Step 1: Analyze Error List
-```
-- Read entire error.out or error list or cargo build once
-- Group by file path
-- Note line numbers and error types
-- Understand dependencies between errors
-```
+### HTMX-First Approach
+- Use HTMX to minimize JavaScript
+- Server returns HTML fragments, not JSON
+- Use `hx-get`, `hx-post`, `hx-target`, `hx-swap`
+- WebSocket via htmx-ws extension
 
-### Step 2: Fix Each File
-```
-For each file:
-1. read_file(path, start_line, end_line) - get context
-2. Understand the struct/function signatures
-3. Fix ALL errors in that file at once
-4. edit_file() - single write operation
+### Local Assets Only - NO CDN
+```html
+<!-- ✅ CORRECT -->
+<script src="js/vendor/htmx.min.js"></script>
+
+<!-- ❌ WRONG -->
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
 ```
 
-### Step 3: Common Error Patterns
+### Vendor Libraries Location
+```
+ui/suite/js/vendor/
+├── htmx.min.js
+├── htmx-ws.js
+├── marked.min.js
+└── gsap.min.js
+```
 
-| Error | Fix |
-|-------|-----|
-| `expected i64, found u64` | `value as i64` |
-| `expected Option<T>, found T` | `Some(value)` |
-| `expected T, found Option<T>` | `value.unwrap_or(default)` |
-| `cannot multiply f32 by f64` | `f64::from(f32_val) * f64_val` |
-| `no field X on type Y` | Check struct definition, use correct field |
-| `no variant X found` | Check enum definition, use correct variant |
-| `function takes N arguments` | Match function signature |
-| `cannot find function` | Add missing function or fix import |
-| `unused variable` | Delete or use with `..` in patterns |
-| `unused import` | Delete the import line |
-| `cannot move out of X because borrowed` | Use scoping `{ }` to limit borrow |
+---
 
-### Step 4: Verify (ONLY AT END)
+## 📋 PROJECT-SPECIFIC PROMPTS
+
+Each crate has its own PROMPT.md with specific guidelines:
+
+| Crate | PROMPT.md Location | Focus |
+|-------|-------------------|-------|
+| botserver | `botserver/PROMPT.md` | API, security, Rhai BASIC |
+| botui | `botui/PROMPT.md` | UI, HTMX, CSS design system |
+| botapp | `botapp/PROMPT.md` | Tauri, desktop features |
+| botlib | `botlib/PROMPT.md` | Shared types, errors |
+| botbook | `botbook/PROMPT.md` | Documentation, mdBook |
+| bottest | `bottest/PROMPT.md` | Test infrastructure |
+
+### Special Prompts
+| File | Purpose |
+|------|---------|
+| `botserver/src/tasks/PROMPT.md` | AutoTask LLM executor |
+| `botserver/src/auto_task/APP_GENERATOR_PROMPT.md` | App generation |
+
+---
+
+## 🚀 STARTING DEVELOPMENT
+
+### Start Both Servers
 ```bash
-cargo build -p botserver 2>&1 | tee error.out
+# Terminal 1: botserver
+cd botserver && cargo run -- --noconsole
+
+# Terminal 2: botui  
+cd botui && BOTSERVER_URL="http://localhost:8088" cargo run
+```
+
+### Build Commands
+```bash
+# Check single crate
+cargo check -p botserver
+
+# Build workspace
+cargo build
+
+# Run tests
+cargo test -p bottest
 ```
 
 ---
 
-## 🚀 BOTSERVER RUN LOOP - FOR RUNTIME FIXES
+## 📋 CONTINUATION PROMPT
+
+When starting a new session or continuing work:
 
 ```
-LOOP UNTIL botserver starts successfully:
-  1. cargo build -p botserver 2>&1 | tail -20
-  2. IF build fails → fix errors → CONTINUE LOOP
-  3. cd botserver && timeout 30 ../target/debug/botserver --noconsole 2>&1 | head -80
-  4. Analyze output for errors/warnings
-  5. Fix issues in code
-  6. CONTINUE LOOP
-END LOOP
-```
+Continue on gb/ workspace. Follow PROMPT.md strictly:
 
-### Key Paths (relative to gb/)
-- Binary: `target/debug/botserver`
-- Run from: `botserver/` directory
-- Env file: `botserver/.env`
-- Stack: `botserver/botserver-stack/`
-- Logs: `botserver/botserver-stack/logs/<component>/`
-
----
-
-## Quick Reference
-
-- Read: `read_file(path="botserver/src/main.rs")`
-- Read section: `read_file(path="...", start_line=100, end_line=200)`
-- Edit: `edit_file(path="...", mode="edit")`
-- Find: `find_path(glob="**/*.rs")`
-- Search: `grep(regex="pattern")`
-- Check: `diagnostics()` or `diagnostics(path="file.rs")`
-
----
-
-## 📋 CONTINUATION PROMPT FOR NEXT SESSION
-
-### For OFFLINE error fixing:
-```
-Fix all errors in error.out OFFLINE:
-
-1. Read the entire error list first
-2. Group errors by file
-3. Fix ALL errors in each file before moving to next
-4. DO NOT run cargo build or diagnostics until ALL fixes done
-5. Write each file ONCE with all fixes
-
-Follow PROMPT.md strictly:
-- No #[allow()] attributes
-- Delete unused code, don't suppress
-- Use proper type conversions
-- Check struct/enum definitions before fixing
-```
-
-### For interactive fixing:
-```
-Continue working on gb/ workspace. Follow PROMPT.md strictly:
-
-1. Run diagnostics() first
+1. Check current state with build/diagnostics
 2. Fix ALL warnings and errors - NO #[allow()] attributes
 3. Delete unused code, don't suppress warnings
 4. Remove unused parameters, don't prefix with _
-5. Sleep after edits, verify with diagnostics
+5. Verify after each fix batch
 6. Loop until 0 warnings, 0 errors
 ```
 
 ---
 
-## Remember
+## 🔑 REMEMBER
 
 - **OFFLINE FIRST** - Fix all errors from list before compiling
 - **ZERO WARNINGS, ZERO ERRORS** - The only acceptable state
