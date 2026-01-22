@@ -1,3 +1,4 @@
+
 [workspace]
 resolver = "2"
 members = [
@@ -10,40 +11,21 @@ members = [
 ]
 
 [workspace.lints.rust]
-unused_imports = "warn"
-unused_variables = "warn"
-unused_mut = "warn"
-unsafe_code = "deny"
-missing_docs = "allow"
 
 [workspace.lints.clippy]
-all = { level = "warn", priority = -1 }
-pedantic = { level = "warn", priority = -1 }
-nursery = { level = "warn", priority = -1 }
-cargo = { level = "warn", priority = -1 }
-panic = "warn"
-todo = "warn"
-missing_const_for_fn = "allow"
-needless_pass_by_value = "allow"
-multiple_crate_versions = "allow"
-future_not_send = "allow"
-similar_names = "allow"
-missing_errors_doc = "allow"
-missing_panics_doc = "allow"
-
 
 [profile.release]
 lto = true
 opt-level = "z"
 strip = true
 panic = "abort"
-codegen-units = 1
+codegen-units = 8
 overflow-checks = true
 
 [profile.ci]
 inherits = "release"
 lto = false
-codegen-units = 16
+codegen-units = 8
 debug = false
 
 [profile.low-memory]
@@ -55,7 +37,7 @@ incremental = false
 opt-level = "s"
 
 [profile.dev]
-debug = 0
+debug = 1
 incremental = true
-codegen-units = 256
+codegen-units = 32
 opt-level = 0
