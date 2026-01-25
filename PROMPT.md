@@ -112,6 +112,26 @@ When a file grows beyond this limit:
 
 ---
 
+## 🚀 PERFORMANCE & SIZE STANDARDS
+
+### Binary Size Optimization
+- **Release Profile**: Always maintain `opt-level = "z"`, `lto = true`, `codegen-units = 1`, `strip = true`, `panic = "abort"`.
+- **Dependencies**: 
+  - Run `cargo tree --duplicates` weekly to find and resolve duplicate versions.
+  - Run `cargo machete` to remove unused dependencies.
+  - Use `default-features = false` and explicitly opt-in to needed features.
+
+### Memory Optimization
+- **Strings**: Prefer `&str` over `String` where possible. Use `Cow<str>` for conditional ownership.
+- **Collections**: Use `Vec::with_capacity` when size is known. Consider `SmallVec` for hot paths.
+- **Allocations**: Minimize heap allocations in hot paths.
+
+### Linting & Code Quality
+- **Clippy**: Code MUST pass `cargo clippy --all-targets --all-features` with **0 warnings**.
+- **No Allow**: Do not use `#[allow(clippy::...)]` unless absolutely necessary and documented. Fix the underlying issue.
+
+---
+
 ## 🔐 SECURITY DIRECTIVES - MANDATORY
 
 ### Error Handling - NO PANICS IN PRODUCTION
