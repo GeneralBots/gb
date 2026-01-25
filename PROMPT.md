@@ -380,3 +380,4 @@ Continue on gb/ workspace. Follow PROMPT.md strictly:
 - **VERIFY LAST** - Only compile/diagnostics after ALL fixes
 - **DELETE DEAD CODE** - Don't keep unused code around
 - **Version 6.2.0** - Do not change without approval
+- **GIT WORKFLOW** - ALWAYS push to ALL repositories (github, pragmatismo)
