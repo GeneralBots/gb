@@ -1,3 +1,5 @@
 {
-    "git.ignoreLimitWarning": true
+    "git.ignoreLimitWarning": true,
+    "Codegeex.SidebarUI.LanguagePreference": "English",
+    "Codegeex.RepoIndex": true
 }
