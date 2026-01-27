@@ -93,22 +93,34 @@ CARGO_BUILD_JOBS=1 cargo check -p botserver 2>&1 | tail -200
 
 ## 📏 FILE SIZE LIMITS - MANDATORY
 
-### Maximum 1000 Lines Per File
+### Maximum 450 Lines Per File
 
 When a file grows beyond this limit:
 
 1. **Identify logical groups** - Find related functions
 2. **Create subdirectory module** - e.g., `handlers/`
 3. **Split by responsibility:**
-   - `crud.rs` - Create, Read, Update, Delete
-   - `ai.rs` - AI/ML handlers
-   - `export.rs` - Export/import
-   - `validation.rs` - Validation
-   - `mod.rs` - Re-exports
+   - `types.rs` - Structs, enums, type definitions
+   - `handlers.rs` - HTTP handlers and routes
+   - `operations.rs` - Core business logic
+   - `utils.rs` - Helper functions
+   - `mod.rs` - Re-exports and configuration
 4. **Keep files focused** - Single responsibility
 5. **Update mod.rs** - Re-export all public items
 
-**NEVER let a single file exceed 1000 lines - split proactively at 800 lines**
+**NEVER let a single file exceed 450 lines - split proactively at 350 lines**
+
+### Current Files Requiring Immediate Refactoring
+
+| File | Lines | Target Split |
+|------|-------|--------------|
+| `botserver/src/drive/mod.rs` | 1522 | → 4 files |
+| `botserver/src/auto_task/app_generator.rs` | 2981 | → 7 files |
+| `botui/ui/suite/sheet/sheet.js` | 3220 | → 8 files |
+| `botserver/src/tasks/mod.rs` | 2651 | → 6 files |
+| `botserver/src/learn/mod.rs` | 2306 | → 5 files |
+
+See `TODO-refactor1.md` for detailed refactoring plans.
 
 ---
 
@@ -125,6 +137,12 @@ When a file grows beyond this limit:
 - **Strings**: Prefer `&str` over `String` where possible. Use `Cow<str>` for conditional ownership.
 - **Collections**: Use `Vec::with_capacity` when size is known. Consider `SmallVec` for hot paths.
 - **Allocations**: Minimize heap allocations in hot paths.
+- **Cloning**: Avoid unnecessary `.clone()` calls. Use references or `Cow` types.
+
+### Code Quality Issues Found
+- **955 instances** of `unwrap()`/`expect()` in codebase - ALL must be replaced with proper error handling
+- **12,973 instances** of excessive `clone()`/`to_string()` calls - optimize for performance
+- **Test code exceptions**: `unwrap()` allowed in test files only
 
 ### Linting & Code Quality
 - **Clippy**: Code MUST pass `cargo clippy --all-targets --all-features` with **0 warnings**.
@@ -362,8 +380,40 @@ Continue on gb/ workspace. Follow PROMPT.md strictly:
 2. Fix ALL warnings and errors - NO #[allow()] attributes
 3. Delete unused code, don't suppress warnings
 4. Remove unused parameters, don't prefix with _
-5. Verify after each fix batch
-6. Loop until 0 warnings, 0 errors
+5. Replace ALL unwrap()/expect() with proper error handling
+6. Optimize excessive clone()/to_string() calls
+7. Verify after each fix batch
+8. Loop until 0 warnings, 0 errors
+9. Refactor files >450 lines following TODO-refactor1.md
+```
+
+## 🔧 IMMEDIATE TECHNICAL DEBT
+
+### Critical Issues to Address
+
+1. **Error Handling Debt**: 955 instances of `unwrap()`/`expect()` in production code
+2. **Performance Debt**: 12,973 excessive `clone()`/`to_string()` calls
+3. **File Size Debt**: 7 files exceed 450 lines (largest: 3220 lines)
+4. **Test Coverage**: Missing integration tests for critical paths
+5. **Documentation**: Missing inline documentation for complex algorithms
+
+### Weekly Maintenance Tasks
+
+```bash
+# Check for duplicate dependencies
+cargo tree --duplicates
+
+# Remove unused dependencies  
+cargo machete
+
+# Check binary size
+cargo build --release && ls -lh target/release/botserver
+
+# Performance profiling
+cargo bench
+
+# Security audit
+cargo audit
 ```
 
 ---
