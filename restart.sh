@@ -1,4 +1,3 @@
-export RUST_LOG=info
 pkill rustc -9
 pkill botserver -9
 pkill botui -9
