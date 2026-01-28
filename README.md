@@ -1,52 +1,445 @@
 # General Bots Workspace
 
-**Version:** 6.1.0  
+**Version:** 6.2.0  
 **Type:** Rust Workspace (Monorepo with Independent Subproject Repos)
 
 ---
 
-## Structure
+## Overview
 
-This workspace contains multiple General Bots projects:
+General Bots is a comprehensive automation platform built with Rust, providing a unified workspace for building AI-powered bots, web interfaces, desktop applications, and integration tools. The workspace follows a modular architecture with independent subprojects that can be developed and deployed separately while sharing common libraries and standards.
 
+For comprehensive documentation, see **[docs.pragmatismo.com.br](https://docs.pragmatismo.com.br)** or the **[BotBook](./botbook)** for detailed guides, API references, and tutorials.
+
+---
+
+## 📁 Workspace Structure
+
+| Crate | Purpose | Port | Tech Stack |
+|-------|---------|------|------------|
+| **botserver** | Main API server, business logic | 8088 | Axum, Diesel, Rhai BASIC |
+| **botui** | Web UI server (dev) + proxy | 3000 | Axum, HTML/HTMX/CSS |
+| **botapp** | Desktop app wrapper | - | Tauri 2 |
+| **botlib** | Shared library | - | Core types, errors |
+| **botbook** | Documentation | - | mdBook |
+| **bottest** | Integration tests | - | tokio-test |
+| **botdevice** | IoT/Device support | - | Rust |
+| **botmodels** | Data models visualization | - | - |
+| **botplugin** | Browser extension | - | JS |
+
+### Key Paths
+- **Binary:** `target/debug/botserver`
+- **Run from:** `botserver/` directory
+- **Env file:** `botserver/.env`
+- **Stack:** `botserver/botserver-stack/`
+- **UI Files:** `botui/ui/suite/`
+
+---
+
+## Quick Start
+
+### Start Both Servers
+```bash
+# Terminal 1: botserver
+cd botserver && cargo run -- --noconsole
+
+# Terminal 2: botui  
+cd botui && BOTSERVER_URL="http://localhost:8088" cargo run
 ```
-gb/
-├── PROMPT.md          ← Workspace-level development guide (READ THIS FIRST)
-├── Cargo.toml         ← Workspace configuration
-├── README.md          ← This file
-│
-├── botapp/            ← Desktop application (Tauri)
-├── botserver/         ← Main server (API + business logic)
-├── botlib/            ← Shared library (types, utilities)
-├── botui/             ← Web UI (HTML/CSS/JS)
-├── botbook/           ← Documentation
-├── bottest/           ← Integration tests
-├── botdevice/         ← Device integration
-├── botmodels/         ← AI models
-├── botplugin/         ← Plugin system
-├── bottemplates/      ← Templates
-└── target/            ← Build artifacts
+
+### Build Commands
+```bash
+# Check single crate
+cargo check -p botserver
+
+# Build workspace
+cargo build
+
+# Run tests
+cargo test -p bottest
 ```
 
 ---
 
-## CRITICAL: PROMPT.md Files
+## 🔥 Error Fixing Workflow
 
-**Each project has a PROMPT.md that defines its development rules.**
+### Mode 1: OFFLINE Batch Fix (PREFERRED)
 
-The diagnostics tool reads and respects these PROMPT.md files.
+When given error output:
 
-### Hierarchy
+```
+1. Read ENTIRE error list first
+2. Group errors by file
+3. For EACH file with errors:
+   a. View file → understand context
+   b. Fix ALL errors in that file
+   c. Write once with all fixes
+4. Move to next file
+5. REPEAT until ALL errors addressed
+6. ONLY THEN → verify with build/diagnostics
+```
 
-1. **`PROMPT.md`** (this directory) - Workspace-wide rules
-2. **`botapp/PROMPT.md`** - Desktop app specifics
-3. **`botserver/PROMPT.md`** - Server specifics
-4. **`botlib/PROMPT.md`** - Library specifics
-5. **`botui/PROMPT.md`** - UI specifics
-6. **`botbook/PROMPT.md`** - Documentation specifics
-7. **`bottest/PROMPT.md`** - Test specifics
+**NEVER run cargo build/check/clippy DURING fixing**  
+**Fix ALL errors OFFLINE first, verify ONCE at the end**
 
-**ALWAYS read the relevant PROMPT.md before working on a project.**
+### Mode 2: Interactive Loop
+
+```
+LOOP UNTIL (0 warnings AND 0 errors):
+  1. Run diagnostics → pick file with issues
+  2. Read entire file
+  3. Fix ALL issues in that file
+  4. Write file once with all fixes
+  5. Verify with diagnostics
+  6. CONTINUE LOOP
+END LOOP
+```
+
+### Common Error Patterns
+
+| Error | Fix |
+|-------|-----|
+| `expected i64, found u64` | `value as i64` |
+| `expected Option<T>, found T` | `Some(value)` |
+| `expected T, found Option<T>` | `value.unwrap_or(default)` |
+| `cannot multiply f32 by f64` | `f64::from(f32_val) * f64_val` |
+| `no field X on type Y` | Check struct definition |
+| `no variant X found` | Check enum definition |
+| `function takes N arguments` | Match function signature |
+| `cannot find function` | Add missing function or fix import |
+| `unused variable` | Delete or use with `..` in patterns |
+| `unused import` | Delete the import line |
+| `cannot move out of X because borrowed` | Use scoping `{ }` to limit borrow |
+
+---
+
+## 🧠 Memory Management
+
+When compilation fails due to memory issues (process "Killed"):
+
+```bash
+pkill -9 cargo; pkill -9 rustc; pkill -9 botserver
+CARGO_BUILD_JOBS=1 cargo check -p botserver 2>&1 | tail -200
+```
+
+---
+
+## 📏 File Size Limits - MANDATORY
+
+### Maximum 450 Lines Per File
+
+When a file grows beyond this limit:
+
+1. **Identify logical groups** - Find related functions
+2. **Create subdirectory module** - e.g., `handlers/`
+3. **Split by responsibility:**
+   - `types.rs` - Structs, enums, type definitions
+   - `handlers.rs` - HTTP handlers and routes
+   - `operations.rs` - Core business logic
+   - `utils.rs` - Helper functions
+   - `mod.rs` - Re-exports and configuration
+4. **Keep files focused** - Single responsibility
+5. **Update mod.rs** - Re-export all public items
+
+**NEVER let a single file exceed 450 lines - split proactively at 350 lines**
+
+### Current Files Requiring Immediate Refactoring
+
+| File | Lines | Target Split |
+|------|-------|--------------|
+| `botserver/src/drive/mod.rs` | 1522 | → 4 files |
+| `botserver/src/auto_task/app_generator.rs` | 2981 | → 7 files |
+| `botui/ui/suite/sheet/sheet.js` | 3220 | → 8 files |
+| `botserver/src/tasks/mod.rs` | 2651 | → 6 files |
+| `botserver/src/learn/mod.rs` | 2306 | → 5 files |
+
+See `TODO-refactor1.md` for detailed refactoring plans.
+
+---
+
+## 🚀 Performance & Size Standards
+
+### Binary Size Optimization
+- **Release Profile**: Always maintain `opt-level = "z"`, `lto = true`, `codegen-units = 1`, `strip = true`, `panic = "abort"`.
+- **Dependencies**: 
+  - Run `cargo tree --duplicates` weekly to find and resolve duplicate versions.
+  - Run `cargo machete` to remove unused dependencies.
+  - Use `default-features = false` and explicitly opt-in to needed features.
+
+### Memory Optimization
+- **Strings**: Prefer `&str` over `String` where possible. Use `Cow<str>` for conditional ownership.
+- **Collections**: Use `Vec::with_capacity` when size is known. Consider `SmallVec` for hot paths.
+- **Allocations**: Minimize heap allocations in hot paths.
+- **Cloning**: Avoid unnecessary `.clone()` calls. Use references or `Cow` types.
+
+### Code Quality Issues Found
+- **955 instances** of `unwrap()`/`expect()` in codebase - ALL must be replaced with proper error handling
+- **12,973 instances** of excessive `clone()`/`to_string()` calls - optimize for performance
+- **Test code exceptions**: `unwrap()` allowed in test files only
+
+### Linting & Code Quality
+- **Clippy**: Code MUST pass `cargo clippy --all-targets --all-features` with **0 warnings**.
+- **No Allow**: Do not use `#[allow(clippy::...)]` unless absolutely necessary and documented. Fix the underlying issue.
+
+---
+
+## 🔐 Security Directives - MANDATORY
+
+### Error Handling - NO PANICS IN PRODUCTION
+
+```rust
+// ❌ FORBIDDEN
+value.unwrap()
+value.expect("message")
+panic!("error")
+todo!()
+unimplemented!()
+
+// ✅ REQUIRED
+value?
+value.ok_or_else(|| Error::NotFound)?
+value.unwrap_or_default()
+value.unwrap_or_else(|e| { log::error!("{}", e); default })
+if let Some(v) = value { ... }
+match value { Ok(v) => v, Err(e) => return Err(e.into()) }
+```
+
+### Command Execution - USE SafeCommand
+
+```rust
+// ❌ FORBIDDEN
+Command::new("some_command").arg(user_input).output()
+
+// ✅ REQUIRED
+use crate::security::command_guard::SafeCommand;
+SafeCommand::new("allowed_command")?
+    .arg("safe_arg")?
+    .execute()
+```
+
+### Error Responses - USE ErrorSanitizer
+
+```rust
+// ❌ FORBIDDEN
+Json(json!({ "error": e.to_string() }))
+format!("Database error: {}", e)
+
+// ✅ REQUIRED
+use crate::security::error_sanitizer::log_and_sanitize;
+let sanitized = log_and_sanitize(&e, "context", None);
+(StatusCode::INTERNAL_SERVER_ERROR, sanitized)
+```
+
+### SQL - USE sql_guard
+
+```rust
+// ❌ FORBIDDEN
+format!("SELECT * FROM {}", user_table)
+
+// ✅ REQUIRED
+use crate::security::sql_guard::{sanitize_identifier, validate_table_name};
+let safe_table = sanitize_identifier(&user_table);
+validate_table_name(&safe_table)?;
+```
+
+---
+
+## ❌ Absolute Prohibitions
+
+```
+❌ NEVER use .unwrap() or .expect() in production code (tests OK)
+❌ NEVER use panic!(), todo!(), unimplemented!()
+❌ NEVER use Command::new() directly - use SafeCommand
+❌ NEVER return raw error strings to HTTP clients
+❌ NEVER use #[allow()] in source code - FIX the code instead
+❌ NEVER add lint exceptions to Cargo.toml - FIX the code instead
+❌ NEVER use _ prefix for unused variables - DELETE or USE them
+❌ NEVER leave unused imports or dead code
+❌ NEVER add comments - code must be self-documenting
+❌ NEVER modify Cargo.toml lints section!
+❌ NEVER use CDN links - all assets must be local
+```
+
+---
+
+## ✅ Mandatory Code Patterns
+
+### Use Self in Impl Blocks
+```rust
+impl MyStruct {
+    fn new() -> Self { Self { } }  // ✅ Not MyStruct
+}
+```
+
+### Derive Eq with PartialEq
+```rust
+#[derive(PartialEq, Eq)]  // ✅ Always both
+struct MyStruct { }
+```
+
+### Inline Format Args
+```rust
+format!("Hello {name}")  // ✅ Not format!("{}", name)
+```
+
+### Combine Match Arms
+```rust
+match x {
+    A | B => do_thing(),  // ✅ Combine identical arms
+    C => other(),
+}
+```
+
+---
+
+## 🖥️ UI Architecture (botui + botserver)
+
+### Two Servers During Development
+
+| Server | Port | Purpose |
+|--------|------|---------|
+| **botui** | 3000 | Serves UI files + proxies API to botserver |
+| **botserver** | 8088 | Backend API + embedded UI fallback |
+
+### How It Works
+
+```
+Browser → localhost:3000 → botui (serves HTML/CSS/JS)
+                        → /api/* proxied to botserver:8088
+                        → /suite/* served from botui/ui/suite/
+```
+
+### Adding New Suite Apps
+
+1. Create folder: `botui/ui/suite/<appname>/`
+2. Add to `SUITE_DIRS` in `botui/src/ui_server/mod.rs`
+3. Rebuild botui: `cargo build -p botui`
+4. Add menu entry in `botui/ui/suite/index.html`
+
+### Hot Reload
+
+- **UI files (HTML/CSS/JS)**: Edit & refresh browser (no restart)
+- **botui Rust code**: Rebuild + restart botui
+- **botserver Rust code**: Rebuild + restart botserver
+
+### Production (Single Binary)
+
+When `botui/ui/suite/` folder not found, botserver uses **embedded UI** compiled into binary via `rust-embed`.
+
+---
+
+## 🎨 Frontend Standards
+
+### HTMX-First Approach
+- Use HTMX to minimize JavaScript
+- Server returns HTML fragments, not JSON
+- Use `hx-get`, `hx-post`, `hx-target`, `hx-swap`
+- WebSocket via htmx-ws extension
+
+### Local Assets Only - NO CDN
+```html
+<!-- ✅ CORRECT -->
+<script src="js/vendor/htmx.min.js"></script>
+
+<!-- ❌ WRONG -->
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+```
+
+### Vendor Libraries Location
+```
+ui/suite/js/vendor/
+├── htmx.min.js
+├── htmx-ws.js
+├── marked.min.js
+└── gsap.min.js
+```
+
+---
+
+## 📋 Project-Specific Guidelines
+
+Each crate has its own README.md with specific guidelines:
+
+| Crate | README.md Location | Focus |
+|-------|-------------------|-------|
+| botserver | `botserver/README.md` | API, security, Rhai BASIC |
+| botui | `botui/README.md` | UI, HTMX, CSS design system |
+| botapp | `botapp/README.md` | Tauri, desktop features |
+| botlib | `botlib/README.md` | Shared types, errors |
+| botbook | `botbook/README.md` | Documentation, mdBook |
+| bottest | `bottest/README.md` | Test infrastructure |
+
+### Special Prompts
+| File | Purpose |
+|------|---------|
+| `botserver/src/tasks/README.md` | AutoTask LLM executor |
+| `botserver/src/auto_task/APP_GENERATOR_PROMPT.md` | App generation |
+
+---
+
+## 📚 Documentation
+
+For complete documentation, guides, and API references:
+
+- **[docs.pragmatismo.com.br](https://docs.pragmatismo.com.br)** - Full online documentation
+- **[BotBook](./botbook)** - Local comprehensive guide with tutorials and examples
+- **[General Bots Repository](https://github.com/GeneralBots/BotServer)** - Main project repository
+
+---
+
+## 🔧 Immediate Technical Debt
+
+### Critical Issues to Address
+
+1. **Error Handling Debt**: 955 instances of `unwrap()`/`expect()` in production code
+2. **Performance Debt**: 12,973 excessive `clone()`/`to_string()` calls
+3. **File Size Debt**: 7 files exceed 450 lines (largest: 3220 lines)
+4. **Test Coverage**: Missing integration tests for critical paths
+5. **Documentation**: Missing inline documentation for complex algorithms
+
+### Weekly Maintenance Tasks
+
+```bash
+# Check for duplicate dependencies
+cargo tree --duplicates
+
+# Remove unused dependencies  
+cargo machete
+
+# Check binary size
+cargo build --release && ls -lh target/release/botserver
+
+# Performance profiling
+cargo bench
+
+# Security audit
+cargo audit
+```
+
+---
+
+## Git Structure
+
+**Note:** Each subproject has its own git repository. This root repository only tracks workspace-level files:
+
+- `Cargo.toml` - Workspace configuration
+- `README.md` - This file
+- `.gitignore` - Ignore patterns
+- `ADDITIONAL-SUGGESTIONS.md` - Enhancement ideas
+- `TODO-*.md` - Task tracking files
+
+Subprojects (botapp, botserver, etc.) are **not** git submodules - they are independent repositories.
+
+---
+
+## Development Workflow
+
+1. Read this README.md (workspace-level rules)
+2. Read `<project>/README.md` (project-specific rules)
+3. Use diagnostics tool to check warnings
+4. Fix all warnings with full file rewrites
+5. Verify with diagnostics after each file
+6. Never suppress warnings with `#[allow()]`
 
 ---
 
@@ -63,64 +456,19 @@ The diagnostics tool reads and respects these PROMPT.md files.
 
 ---
 
-## Quick Start
+## 🔑 Remember
 
-```bash
-cargo build
-cargo test
-```
-
----
-
-## Development Workflow
-
-1. Read `PROMPT.md` (workspace-level rules)
-2. Read `<project>/PROMPT.md` (project-specific rules)
-3. Use diagnostics tool to check warnings
-4. Fix all warnings with full file rewrites
-5. Verify with diagnostics after each file
-6. Never suppress warnings with `#[allow()]`
-
----
-
-## Git Structure
-
-**Note:** Each subproject has its own git repository. This root repository only tracks workspace-level files:
-
-- `PROMPT.md` - Development guide
-- `Cargo.toml` - Workspace configuration
-- `README.md` - This file
-- `.gitignore` - Ignore patterns
-
-Subprojects (botapp, botserver, etc.) are **not** git submodules - they are independent repositories.
-
----
-
-## Rules Summary
-
-```
-✅ FULL FILE REWRITES ONLY
-✅ BATCH ALL FIXES BEFORE WRITING
-✅ VERIFY WITH DIAGNOSTICS AFTER EACH FILE
-✅ TRUST PROJECT DIAGNOSTICS
-✅ RESPECT ALL RULES
-
-❌ NEVER use #[allow()] in source code
-❌ NEVER use partial edits
-❌ NEVER run cargo check/clippy manually
-❌ NEVER leave unused code
-❌ NEVER use .unwrap()/.expect()
-❌ NEVER use panic!/todo!/unimplemented!()
-❌ NEVER add comments
-```
-
----
-
-## Links
-
-- Main Server: http://localhost:8081
-- Desktop App: Uses Tauri to wrap botui
-- Documentation: See botbook/
+- **OFFLINE FIRST** - Fix all errors from list before compiling
+- **ZERO WARNINGS, ZERO ERRORS** - The only acceptable state
+- **FIX, DON'T SUPPRESS** - No #[allow()], no Cargo.toml lint exceptions
+- **SECURITY FIRST** - No unwrap, no raw errors, no direct commands
+- **READ BEFORE FIX** - Always understand context first
+- **BATCH BY FILE** - Fix ALL errors in a file at once
+- **WRITE ONCE** - Single edit per file with all fixes
+- **VERIFY LAST** - Only compile/diagnostics after ALL fixes
+- **DELETE DEAD CODE** - Don't keep unused code around
+- **Version 6.2.0** - Do not change without approval
+- **GIT WORKFLOW** - ALWAYS push to ALL repositories (github, pragmatismo)
 
 ---
 
