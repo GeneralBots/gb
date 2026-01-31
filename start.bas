@@ -9,7 +9,7 @@ END IF
 
 REM Register websites for crawling (preprocessing mode)
 USE WEBSITE "https://docs.python.org"
-USE WEBSITE "https://developer.mozilla.org" 
+USE WEBSITE "https://developer.mozilla.org"
 USE WEBSITE "https://stackoverflow.com"
 
 REM Set context for LLM
@@ -22,7 +22,7 @@ ADD SUGGESTION "python" AS "How do I use Python dictionaries?"
 ADD SUGGESTION "javascript" AS "Explain JavaScript async/await"
 ADD SUGGESTION "web" AS "What is the DOM in web development?"
 
-REM Initial greeting and exit - no interaction loop
+REM Initial greeting
 TALK intro
 TALK "I have access to Python documentation, MDN web docs, and Stack Overflow."
 TALK "Ask me any programming question!"
