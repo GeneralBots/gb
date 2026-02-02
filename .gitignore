@@ -30,7 +30,9 @@ botserver-installers/*
 !botserver-installers/.gitkeep
 botserver-stack
 TODO*
-
+work
 
 # Lock file (regenerated from Cargo.toml)
 Cargo.lock
+.kiro
+config

@@ -1,1 +1,1 @@
-rm -rf botserver-stack/  botserver.log botserver/work/
+rm -rf botserver-stack/ ./work/ .env 

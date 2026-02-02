@@ -1,4 +1,4 @@
 pkill botui
-pkill botserver
-clear
+pkill botserver -9
+
 

@@ -36,6 +36,114 @@ For comprehensive documentation, see **[docs.pragmatismo.com.br](https://docs.pr
 
 ---
 
+## 🏗️ BotServer Component Architecture
+
+### 🔧 Infrastructure Components (Auto-Managed)
+
+BotServer automatically installs, configures, and manages all infrastructure components on first run. **DO NOT manually start these services** - BotServer handles everything.
+
+| Component | Purpose | Port | Binary Location | Managed By |
+|-----------|---------|------|-----------------|------------|
+| **Vault** | Secrets management | 8200 | `botserver-stack/bin/vault/vault` | botserver |
+| **PostgreSQL** | Primary database | 5432 | `botserver-stack/bin/tables/bin/postgres` | botserver |
+| **MinIO** | Object storage (S3-compatible) | 9000/9001 | `botserver-stack/bin/drive/minio` | botserver |
+| **Zitadel** | Identity/Authentication | 8300 | `botserver-stack/bin/directory/zitadel` | botserver |
+| **Qdrant** | Vector database (embeddings) | 6333 | `botserver-stack/bin/vector_db/qdrant` | botserver |
+| **Valkey** | Cache/Queue (Redis-compatible) | 6379 | `botserver-stack/bin/cache/valkey-server` | botserver |
+| **Llama.cpp** | Local LLM server | 8081 | `botserver-stack/bin/llm/build/bin/llama-server` | botserver |
+
+### 📦 Component Installation System
+
+Components are defined in `botserver/3rdparty.toml` and managed by the `PackageManager` (`botserver/src/core/package_manager/`):
+
+```toml
+[components.cache]
+name = "Valkey Cache (Redis-compatible)"
+url = "https://github.com/valkey-io/valkey/archive/refs/tags/8.0.2.tar.gz"
+filename = "valkey-8.0.2.tar.gz"
+
+[components.llm]
+name = "Llama.cpp Server"
+url = "https://github.com/ggml-org/llama.cpp/releases/download/b7345/llama-b7345-bin-ubuntu-x64.zip"
+filename = "llama-b7345-bin-ubuntu-x64.zip"
+```
+
+**Installation Flow:**
+1. **Download:** Components downloaded to `botserver-installers/` (cached)
+2. **Extract/Build:** Binaries placed in `botserver-stack/bin/<component>/`
+3. **Configure:** Config files generated in `botserver-stack/conf/<component>/`
+4. **Start:** Components started with proper TLS certificates
+5. **Monitor:** Components monitored and auto-restarted if needed
+
+**Bootstrap Process:**
+- First run: Full bootstrap (downloads, installs, configures all components)
+- Subsequent runs: Only starts existing components (uses cached binaries)
+- Config stored in: `botserver-stack/conf/system/bootstrap.json`
+
+### 🚀 PROPER STARTUP PROCEDURES
+
+**❌ FORBIDDEN:**
+- NEVER manually start infrastructure components (Vault, PostgreSQL, MinIO, etc.)
+- NEVER run `cargo run` or `cargo build` for botserver directly without ./restart.sh
+- NEVER modify botserver-stack/ files manually (use botserver API)
+
+**✅ REQUIRED:**
+
+**Option 1: Development (Recommended)**
+```bash
+./restart.sh
+```
+This script:
+1. Kills existing processes cleanly
+2. Builds botserver and botui sequentially (no race conditions)
+3. Starts botserver in background with logging to `botserver.log`
+4. Starts botui in background with logging to `botui.log`
+5. Shows process IDs and access URLs
+
+**Option 2: Production/Release**
+```bash
+# Build release binary first
+cargo build --release -p botserver
+
+# Start with release binary
+RUST_LOG=info ./target/release/botserver --noconsole 2>&1 | tee botserver.log &
+```
+
+**Option 3: Using Exec (Systemd/Supervisord)**
+```bash
+# In systemd service or similar
+ExecStart=/home/rodriguez/src/gb/target/release/botserver --noconsole
+```
+
+### 🔒 Component Communication
+
+All components communicate through internal networks with mTLS:
+- **Vault**: mTLS for secrets access
+- **PostgreSQL**: TLS encrypted connections
+- **MinIO**: TLS with client certificates
+- **Zitadel**: mTLS for user authentication
+
+Certificates auto-generated in: `botserver-stack/conf/system/certificates/`
+
+### 📊 Component Status
+
+Check component status anytime:
+```bash
+# Check if all components are running
+ps aux | grep -E "vault|postgres|minio|zitadel|qdrant|valkey" | grep -v grep
+
+# View component logs
+tail -f botserver-stack/logs/vault/vault.log
+tail -f botserver-stack/logs/tables/postgres.log
+tail -f botserver-stack/logs/drive/minio.log
+
+# Test component connectivity
+cd botserver-stack/bin/vault && ./vault status
+cd botserver-stack/bin/cache && ./valkey-cli ping
+```
+
+---
+
 ## 🏗️ Component Dependency Graph
 
 ```
@@ -150,136 +258,83 @@ For comprehensive documentation, see **[docs.pragmatismo.com.br](https://docs.pr
 
 ## Quick Start
 
-### MAIN INSTRUCTION: When someone asks to "FOLLOW readme.md" or mentions a project name, read ALL relevant README.md files from involved projects (botserver, botui, etc.) and run `./restart.sh` until no more errors. IF THERE ARE ERRORS, FIX THEM AND RUN `./restart.sh` AGAIN UNTIL 0 ERRORS! THEN LOOP: CONTINUOUSLY MONITOR SERVER/UI OUTPUT FOR ERRORS DURING LOADING - WAIT FOR FULL LOAD AND WATCH FOR ANY ERRORS/WARNINGS IN REAL-TIME OUTPUT! JavaScript errors from browser automatically appear in server logs with CLIENT: prefix.
+### 🚀 Simple Startup (ALWAYS USE restart.sh)
 
-### 🚀 ULTIMATE ERROR HUNTING MODE
-
-**STEP 1: RESTART & START BACKGROUND SERVERS**
 ```bash
 ./restart.sh
-pkill -f botserver; pkill -f botui
+```
+
+**⚠️ CRITICAL: ALWAYS use restart.sh - NEVER start servers individually!**
+
+The script handles BOTH servers properly:
+1. Stop existing processes cleanly
+2. Build botserver and botui sequentially (no race conditions)
+3. Start botserver in background → auto-bootstrap infrastructure
+4. Start botui in background → proxy to botserver
+5. Show process IDs and monitoring commands
+
+**Monitor startup:**
+```bash
+tail -f botserver.log botui.log
+```
+
+**Access:**
+- Web UI: http://localhost:3000
+- API: http://localhost:8088
+
+### 📊 Monitor & Debug
+
+```bash
+tail -f botserver.log botui.log
+```
+
+**Quick status check:**
+```bash
+ps aux | grep -E "botserver|botui" | grep -v grep
+```
+
+**Quick error scan:**
+```bash
+grep -E " E |W |CLIENT:" botserver.log | tail -20
+```
+
+### 🔧 Manual Startup (If needed)
+
+**⚠️ WARNING: Only use if restart.sh fails. Always prefer restart.sh!**
+
+```bash
 cd botserver && cargo run -- --noconsole > ../botserver.log 2>&1 &
 cd botui && BOTSERVER_URL="http://localhost:8088" cargo run > ../botui.log 2>&1 &
 ```
 
-**STEP 2: CONTINUOUS ERROR HUNTING LOOP**
+### 🛑 Stop Servers
+
 ```bash
-while true; do
-  echo "=== ERROR SCAN $(date) ==="
-  echo "🔥 SERVER ERRORS:"
-  grep " E " botserver.log | tail -5
-  echo "⚠️  SERVER WARNINGS:"
-  grep " W " botserver.log | tail -3
-  echo "💥 CLIENT ERRORS:"
-  grep "CLIENT:" botserver.log | tail -3
-  echo "🚨 UI ERRORS:"
-  grep -i "error\|fail" botui.log | tail-3
-  echo "================================"
-  
-  # IF ERRORS FOUND: INTERRUPT AND FIX IMMEDIATELY
-  if grep -q " E " botserver.log || grep -q "CLIENT:" botserver.log || grep -qi "error\|fail" botui.log; then
-    echo "⚠️  ERRORS DETECTED - STOPPING FOR FIXES"
-    break
-  fi
-  sleep 10
-done
-```
-
-**STEP 3: SINGLE SCAN (for quick check)**
-```bash
-echo "=== ERROR SCAN $(date) ===" && echo "🔥 SERVER ERRORS:" && grep " E " botserver.log | tail -5 && echo "⚠️  SERVER WARNINGS:" && grep " W " botserver.log | tail -3 && echo "💥 CLIENT ERRORS:" && grep "CLIENT:" botserver.log | tail-3 && echo "🚨 UI ERRORS:" && grep -i "error\|fail" botui.log | tail-3 && echo "================================"
-```
-
-**STEP 4: ERROR FIXING PROTOCOL**
-When errors are detected:
-1. **STOP SERVERS IMMEDIATELY**: `pkill -f botserver; pkill -f botui`
-2. **ANALYZE ERROR PATTERNS**: Group by module/file
-3. **FIX ALL ERRORS OFFLINE**: Use diagnostics, don't compile during fixes
-4. **RESTART AND VERIFY**: `./restart.sh` then repeat scan
-5. **LOOP UNTIL ZERO ERRORS**: Continue until clean scan
-
-### 🎯 Comprehensive Startup Strategy
-
-**Phase 1: Initial Validation**
-```bash
-# 1. Run restart script first
-./restart.sh
-
-# 2. Verify compilation success
-cd botserver && cargo check
-cd ../botui && cargo check
-```
-
-**Phase 2: Controlled Startup with Monitoring**
-```bash
-# 3. Kill any existing processes
 pkill -f botserver; pkill -f botui
-
-# 4. Start with logging for monitoring
-cd botserver && nohup cargo run -- --noconsole > ../botserver.log 2>&1 &
-cd botui && nohup bash -c 'BOTSERVER_URL="http://localhost:8088" cargo run' > ../botui.log 2>&1 &
 ```
 
-**Phase 3: Real-time Monitoring Loop**
+### ⚠️ Common Issues
+
+**Vault init error?** Delete stale state:
 ```bash
-# 5. Monitor startup logs continuously
-tail -f botserver.log &
-tail -f botui.log &
-
-# 6. Check for specific startup milestones:
-# - botserver: "SecretsManager initialized successfully"
-# - botserver: "PostgreSQL ready" 
-# - botserver: "API server listening on"
-# - botui: "UI server listening on http://0.0.0.0:3000"
+rm -rf botserver-stack/data/vault botserver-stack/conf/vault/init.json && ./restart.sh
 ```
 
-**Phase 4: Error Detection & Response**
-- Watch for ERROR/WARN messages in logs
-- Monitor PostgreSQL initialization (common bottleneck)
-- Check Vault unsealing process
-- Verify both servers reach "listening" state
-- Test connectivity: `curl http://localhost:3000` and `curl http://localhost:8088`
-
-**Phase 5: Error Pattern Scanning**
+**Port in use?** Find and kill:
 ```bash
-# Scan for errors in logs (E prefix indicates errors)
-grep " E " botserver.log | tail -10
-grep " W " botserver.log | tail -10  # Warnings
-grep -i "error\|fail" botserver.log | tail -10
-grep -i "error\|fail" botui.log | tail-10
-
-# Common error patterns to watch for:
-# - "E compiler:" - BASIC script compilation errors
-# - "E table_definition:" - Database table creation issues  
-# - "Failed to" - General operation failures
-# - "Could not parse" - Parsing/syntax errors
-# - "CLIENT:" - JavaScript errors from browser (appear in server logs)
+lsof -ti:8088 | xargs kill -9
+lsof -ti:3000 | xargs kill -9
 ```
 
-**Phase 6: CONTINUOUS MONITORING**
-```bash
-# Start servers in background and monitor logs continuously
-cd botserver && cargo run -- --noconsole > ../botserver.log 2>&1 &
-cd botui && BOTSERVER_URL="http://localhost:8088" cargo run > ../botui.log 2>&1 &
+**⚠️ IMPORTANT: Stack Services Management**
+All infrastructure services (PostgreSQL, Vault, Redis, Qdrant, MinIO, etc.) are **automatically started by botserver** and managed through `botserver-stack/` directory, NOT global system installations. The system uses:
 
-# CONTINUOUS LOOP: Watch for ALL errors in real-time
-while true; do
-  echo "=== SCANNING FOR ERRORS $(date) ==="
-  echo "--- SERVER ERRORS ---"
-  grep " E " botserver.log | tail -5
-  echo "--- SERVER WARNINGS ---" 
-  grep " W " botserver.log | tail -3
-  echo "--- CLIENT ERRORS ---"
-  grep "CLIENT:" botserver.log | tail -3
-  echo "--- UI ERRORS ---"
-  grep -i "error\|fail" botui.log | tail -3
-  echo "=========================="
-  sleep 10
-done
-```
+- **Local binaries:** `botserver-stack/bin/` (PostgreSQL, Vault, Redis, etc.)
+- **Configurations:** `botserver-stack/conf/`
+- **Data storage:** `botserver-stack/data/`
+- **Service logs:** `botserver-stack/logs/` (check here for troubleshooting)
 
-**⚠️ IMPORTANT: Server References**
-All servers (PostgreSQL, Vault, Redis, etc.) are managed through `botserver-stack/` directory, NOT global system installations. The system uses local binaries in `botserver-stack/bin/` and configurations in `botserver-stack/conf/`. Do not install or reference global PostgreSQL, Redis, or other services.
+**Do NOT install or reference global PostgreSQL, Redis, or other services.** When botserver starts, it automatically launches all required stack services. If you encounter service errors, check the individual service logs in `./botserver-stack/logs/[service]/` directories.
 
 ### Start Both Servers (Automated)
 ```bash
@@ -362,16 +417,86 @@ cargo test -p bottest
 - **Error handling**: ALL error paths must have tests
 - **Security**: All security guards must have tests
 
+## 🚨 CRITICAL ERROR HANDLING RULE
+
+**STOP EVERYTHING WHEN ERRORS APPEAR**
+
+When ANY error appears in logs during startup or operation:
+1. **IMMEDIATELY STOP** - Do not continue with other tasks
+2. **IDENTIFY THE ERROR** - Read the full error message and context
+3. **FIX THE ERROR** - Address the root cause, not symptoms
+4. **VERIFY THE FIX** - Ensure error is completely resolved
+5. **ONLY THEN CONTINUE** - Never ignore or work around errors
+
+**NEVER restart servers to "fix" errors - FIX THE ACTUAL PROBLEM**
+
+Examples of errors that MUST be fixed immediately:
+- Database connection errors
+- Component initialization failures  
+- Service startup errors
+- Configuration errors
+- Any error containing "Error:", "Failed:", "Cannot", "Unable"
+
 ## 🐛 Debugging Guide
 
 ### Log Locations
 
 | Component | Log File | What's Logged |
 |-----------|----------|---------------|
-| **botserver** | `botserver/logs/botserver.log` | API requests, errors, script execution |
-| **botui** | `botui/logs/botui.log` | UI rendering, WebSocket connections |
+| **botserver** | `botserver.log` | API requests, errors, script execution, **client navigation events** |
+| **botui** | `botui.log` | UI rendering, WebSocket connections |
 | **drive_monitor** | In botserver logs with `[drive_monitor]` prefix | File sync, compilation |
 | **script execution** | In botserver logs with `[ScriptService]` prefix | BASIC compilation, runtime errors |
+| **client errors** | In botserver logs with `CLIENT:` prefix | JavaScript errors, navigation events |
+
+### Client-Side Logging
+
+**Navigation Tracking:** All client-side navigation is logged to botserver.log with `CLIENT:` prefix:
+```
+CLIENT:NAVIGATION: click: home -> drive
+CLIENT:NAVIGATION: hashchange: drive -> chat
+```
+
+**Error Reporting:** JavaScript errors automatically appear in server logs:
+```
+CLIENT:ERROR: Uncaught TypeError: Cannot read property 'x' of undefined at /suite/js/app.js:123
+```
+
+**For LLM Troubleshooting:** ALWAYS check both:
+1. `botserver.log` - Server errors + client navigation/errors (prefixed with `CLIENT:`)
+2. `botui.log` - UI server logs
+
+### USE WEBSITE Feature - Vector DB Context Injection
+
+**FIXED (v6.2.0+):** The `USE WEBSITE` BASIC command now properly injects vector database embeddings into chat context.
+
+**How it works:**
+1. **Preprocessing:** When a `.bas` file containing `USE WEBSITE "https://..."` is compiled, the website is registered for crawling
+2. **Crawling:** Content is extracted, chunked, and embedded into Qdrant vector DB (collection name: `website_<url_hash>`)
+3. **Runtime Association:** The compiled `.ast` file contains `USE_WEBSITE()` function call that creates session-website association
+4. **Context Injection:** During chat, `inject_kb_context()` searches active websites' embeddings and includes relevant chunks in LLM prompt
+
+**Example BASIC script:**
+```basic
+USE WEBSITE "https://docs.pragmatismo.com.br" REFRESH "1h"
+
+TALK "Hello! I can now answer questions about the documentation."
+```
+
+**Database tables involved:**
+- `session_website_associations` - Links sessions to websites
+- `website_embeddings` - Stores crawled content vectors in Qdrant
+
+**Verification:**
+```sql
+-- Check if website is associated with session
+SELECT * FROM session_website_associations WHERE session_id = '<uuid>';
+
+-- Check if embeddings exist in Qdrant (via HTTP API)
+curl http://localhost:6333/collections/website_<hash>/points/scroll
+```
+
+**Previous Issue:** In earlier versions, `USE WEBSITE` was removed during preprocessing and never executed at runtime, preventing context injection. Now the function call is preserved in the compiled AST.
 
 ### Common Error Messages
 
@@ -383,6 +508,9 @@ cargo test -p bottest
 | `Failed to send TALK message` | WebSocket disconnected | Check client connection, verify web_adapter running |
 | `Drive sync failed` | S3 connection or permission issue | Verify S3 credentials, check bucket exists |
 | `unwrap() called on None value` | Panic in production code | MUST FIX - replace with proper error handling |
+| `Component not responding: <component_name>` | Infrastructure component not accessible | Check component status: `ps aux | grep <component>`. View logs: `tail -f botserver-stack/logs/<component>/`. Restart via ./restart.sh |
+| `Config key not found: <key>` | Missing configuration in database | Check `bot_configuration` table. Set correct value via API or direct SQL update. |
+| `403 Forbidden on POST /api/client-errors` | RBAC blocking client error reporting | FIXED in v6.2.0+ - endpoint now allows anonymous access |
 
 ### Useful Debugging Commands
 
@@ -419,6 +547,30 @@ CARGO_BUILD_JOBS=1 cargo check -p botserver 2>&1 | grep -i error
 2. Verify session_id is valid in database
 3. Check web_adapter is registered for session
 4. Look for TALK execution in botserver logs
+
+**Problem: Component not starting or crashing**
+1. Identify the component from error message (e.g., Vault, PostgreSQL, MinIO, Qdrant, Valkey)
+2. Check if process is running: `ps aux | grep <component_name>`
+3. Check component logs: `tail -f botserver-stack/logs/<component_name>/`
+4. Common fixes:
+   - Config error: Check `botserver-stack/conf/<component_name>/` for valid configuration
+   - Port conflict: Ensure no other process using the component's port
+   - Permission error: Check file permissions in `botserver-stack/data/<component_name>/`
+   - Missing binary: Re-run `./reset.sh && ./restart.sh` to reinstall components
+5. Restart: `./restart.sh`
+
+**Problem: Component configuration errors**
+1. All component configs stored in database `bot_configuration` table
+2. Check current value: `SELECT * FROM bot_configuration WHERE config_key = '<key_name>';`
+3. Update incorrect config: `UPDATE bot_configuration SET config_value = '<correct_value>' WHERE config_key = '<key_name>';`
+4. For path configs: Ensure paths are relative to component binary or absolute
+5. Restart botserver after config changes
+
+**Problem: File not found errors**
+1. Check if file exists in expected location
+2. Verify config paths use correct format (relative/absolute)
+3. Check file permissions: `ls -la <file_path>`
+4. For model/data files: Ensure downloaded to `botserver-stack/data/<component>/`
 
 **Problem: LLM not responding**
 1. Check LLM API credentials in config
@@ -553,6 +705,52 @@ When a file grows beyond this limit:
 | `botserver/src/learn/mod.rs` | 2306 | → 5 files |
 
 See `TODO-refactor1.md` for detailed refactoring plans.
+
+---
+
+## 🔍 Continuous Monitoring
+
+**YOLO Forever Monitoring Pattern:**
+
+The system includes automated log monitoring to catch errors in real-time:
+
+```bash
+# Continuous monitoring (check every 5 seconds)
+while true; do 
+  sleep 5
+  echo "=== Check at $(date +%H:%M:%S) ===" 
+  tail -50 botserver.log | grep -E "ERROR|WARN|CLIENT:" | tail -5 || echo "✓ Clean"
+done
+```
+
+**Quick Status Check:**
+```bash
+# Check last 200 lines for any issues
+tail -200 botserver.log | grep -E "ERROR|WARN|CLIENT:" | tail -10
+
+# Show recent server activity
+tail -30 botserver.log
+
+# Check if server is running
+ps aux | grep botserver | grep -v grep
+```
+
+**Monitoring Dashboard:**
+- **Server Status**: https://localhost:8088 (health endpoint)
+- **Logs**: `tail -f botserver.log`
+- **Client Errors**: Look for `CLIENT:` prefix
+- **Server Errors**: Look for `ERROR` or `WARN` prefixes
+
+**Status Indicators:**
+- ✅ **Clean**: No ERROR/WARN/CLIENT: entries in logs
+- ⚠️ **Warnings**: Non-critical issues that should be reviewed
+- ❌ **Errors**: Critical issues requiring immediate attention
+
+**When Errors Appear:**
+1. Capture the full error context (50 lines before/after)
+2. Identify the component (server, client, database, etc.)
+3. Check troubleshooting section for specific fixes
+4. Update this README with discovered issues and resolutions
 
 ---
 
