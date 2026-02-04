@@ -1,4 +1,6 @@
+RULE 0: Never call tool_call while thinking. Ex NEVER do this: Let me check if the API call succeeded:<tool_call>terminal<arg_key>command</arg_key><arg_value>tail -50 botserver.log | grep -E "LLM streaming error|error|Error|SUCCESS|200"</arg_value><arg_key>cd</arg_key><arg_value>gb</arg_value></tool_call>. First finish Thinking, then emit a explanation and tool!
 # General Bots Workspace
+
 
 **Version:** 6.2.0  
 **Type:** Rust Workspace (Monorepo with Independent Subproject Repos)
