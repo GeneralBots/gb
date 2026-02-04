@@ -1,0 +1,12 @@
+{
+  "name": "gb",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Rodrigo Rodriguez (Pragmatismo) <me@rodrigorodriguez.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.58.1",
+    "@types/node": "^25.2.0"
+  },
+  "scripts": {}
+}
