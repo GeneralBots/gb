@@ -3,16 +3,8 @@ name: BotServer CI
 on:
   push:
     branches: ["main"]
-    paths:
-      - "botserver/**"
-      - "botlib/**"
-      - ".forgejo/workflows/**"
   pull_request:
     branches: ["main"]
-    paths:
-      - "botserver/**"
-      - "botlib/**"
-      - ".forgejo/workflows/**"
 
 env:
   CARGO_BUILD_JOBS: 4
