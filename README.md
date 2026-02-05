@@ -858,6 +858,7 @@ validate_table_name(&safe_table)?;
 ❌ NEVER modify Cargo.toml lints section!
 ❌ NEVER use CDN links - all assets must be local
 ❌ NEVER use cargo clean - causes 30min rebuilds, use ./reset.sh for database issues
+❌ NEVER create .md documentation files without checking botbook/ first - documentation belongs there
 ```
 
 ---
@@ -1035,11 +1036,12 @@ Subprojects (botapp, botserver, etc.) are **not** git submodules - they are inde
 ## Development Workflow
 
 1. Read this README.md (workspace-level rules)
-2. Read `<project>/README.md` (project-specific rules)
-3. Use diagnostics tool to check warnings
-4. Fix all warnings with full file rewrites
-5. Verify with diagnostics after each file
-6. Never suppress warnings with `#[allow()]`
+2. **BEFORE creating any .md file, search botbook/ for existing documentation**
+3. Read `<project>/README.md` (project-specific rules)
+4. Use diagnostics tool to check warnings
+5. Fix all warnings with full file rewrites
+6. Verify with diagnostics after each file
+7. Never suppress warnings with `#[allow()]`
 
 ---
 
