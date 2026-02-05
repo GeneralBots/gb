@@ -1,42 +1,42 @@
 [submodule "botapp"]
 	path = botapp
-	url = https://alm.pragmatismo.com.br/GeneralBots/botapp.git
+	url = https://github.com/GeneralBots/botapp.git
 
 [submodule "botserver"]
 	path = botserver
-	url = https://alm.pragmatismo.com.br/GeneralBots/botserver.git
+	url = https://github.com/GeneralBots/BotServer.git
 
 [submodule "botlib"]
 	path = botlib
-	url = https://alm.pragmatismo.com.br/GeneralBots/botlib.git
+	url = https://github.com/GeneralBots/botlib.git
 
 [submodule "botui"]
 	path = botui
-	url = https://alm.pragmatismo.com.br/GeneralBots/botui.git
+	url = https://github.com/GeneralBots/botui.git
 
 [submodule "botbook"]
 	path = botbook
-	url = https://alm.pragmatismo.com.br/GeneralBots/botbook.git
+	url = https://github.com/GeneralBots/botbook.git
 
 [submodule "bottest"]
 	path = bottest
-	url = https://alm.pragmatismo.com.br/GeneralBots/bottest.git
+	url = https://github.com/GeneralBots/bottest.git
 
 [submodule "botdevice"]
 	path = botdevice
-	url = https://alm.pragmatismo.com.br/GeneralBots/botdevice.git
+	url = https://github.com/GeneralBots/botdevice.git
 
 [submodule "botmodels"]
 	path = botmodels
-	url = https://alm.pragmatismo.com.br/GeneralBots/botmodels.git
+	url = https://github.com/GeneralBots/botmodels.git
 
 [submodule "botplugin"]
 	path = botplugin
-	url = https://alm.pragmatismo.com.br/GeneralBots/botplugin.git
+	url = https://github.com/GeneralBots/botplugin.git
 
 [submodule "bottemplates"]
 	path = bottemplates
-	url = https://alm.pragmatismo.com.br/GeneralBots/bottemplates.git
+	url = https://github.com/GeneralBots/bottemplates.git
 [submodule ".github"]
 	path = .github
-	url = https://alm.pragmatismo.com.br/GeneralBots/.github.git
+	url = https://github.com/GeneralBots/.github.git
