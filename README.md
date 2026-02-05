@@ -1029,7 +1029,33 @@ cargo audit
 - `ADDITIONAL-SUGGESTIONS.md` - Enhancement ideas
 - `TODO-*.md` - Task tracking files
 
-Subprojects (botapp, botserver, etc.) are **not** git submodules - they are independent repositories.
+Subprojects (botapp, botserver, botui, etc.) are **independent repositories referenced as git submodules**.
+
+### ⚠️ CRITICAL: Submodule Push Workflow
+
+When making changes to any submodule (botserver, botui, botlib, etc.):
+
+1. **Commit and push changes within the submodule directory:**
+   ```bash
+   cd botserver
+   git add .
+   git commit -m "Your changes"
+   git push pragmatismo main
+   git push github main
+   ```
+
+2. **Update the global gb repository submodule reference:**
+   ```bash
+   cd ..  # Back to gb root
+   git add botserver
+   git commit -m "Update botserver submodule to latest commit"
+   git push pragmatismo main
+   git push github main
+   ```
+
+**Failure to push the global gb repository will cause submodule changes to not trigger CI/CD pipelines.**
+
+Both repositories must be pushed for changes to take effect in production.
 
 ---
 
