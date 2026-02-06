@@ -338,6 +338,49 @@ All infrastructure services (PostgreSQL, Vault, Redis, Qdrant, MinIO, etc.) are 
 
 **Do NOT install or reference global PostgreSQL, Redis, or other services.** When botserver starts, it automatically launches all required stack services. If you encounter service errors, check the individual service logs in `./botserver-stack/logs/[service]/` directories.
 
+### UI File Deployment - Production Options
+
+**Option 1: Embedded UI (Recommended for Production)**
+
+The `embed-ui` feature compiles UI files directly into the botui binary, eliminating the need for separate file deployment:
+
+```bash
+# Build with embedded UI files
+cargo build --release -p botui --features embed-ui
+
+# The binary now contains all UI files - no additional deployment needed!
+# The botui binary is self-contained and production-ready
+```
+
+**Benefits of embed-ui:**
+- ✅ Single binary deployment (no separate UI files)
+- ✅ Faster startup (no filesystem access)
+- ✅ Smaller attack surface
+- ✅ Simpler deployment process
+
+**Option 2: Filesystem Deployment (Development Only)**
+
+For development, UI files are served from the filesystem:
+
+```bash
+# UI files must exist at botui/ui/suite/
+# This is automatically available in development builds
+```
+
+**Option 3: Manual File Deployment (Legacy)**
+
+If you need to deploy UI files separately (not recommended):
+
+```bash
+# Deploy UI files to production location
+./botserver/deploy/deploy-ui.sh /opt/gbo
+
+# Verify deployment
+ls -la /opt/gbo/bin/ui/suite/index.html
+```
+
+See `botserver/deploy/README.md` for deployment scripts.
+
 ### Start Both Servers (Automated)
 ```bash
 # Use restart script (RECOMMENDED)
