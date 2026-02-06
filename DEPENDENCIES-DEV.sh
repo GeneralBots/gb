@@ -67,8 +67,15 @@ install_debian_ubuntu() {
         python3 \
         python3-pip \
         nodejs \
-        npm
-    
+        npm \
+        libglib2.0-dev \
+        libgobject-2.0-dev \
+        libgio-2.0-dev \
+        libgtk-3-dev \
+        libwebkit2gtk-4.0-dev \
+        libayatana-appindicator3-dev \
+        librsvg2-dev
+
     # Cross-compilation toolchains
     apt-get install -y \
         gcc-aarch64-linux-gnu \
@@ -105,7 +112,13 @@ install_fedora_rhel() {
         python3 \
         python3-pip \
         nodejs \
-        npm
+        npm \
+        glib2-devel \
+        gobject-introspection-devel \
+        gtk3-devel \
+        webkit2gtk3-devel \
+        libappindicator-gtk3-devel \
+        librsvg2-devel
 }
 
 install_arch() {
@@ -134,7 +147,13 @@ install_arch() {
         python \
         python-pip \
         nodejs \
-        npm
+        npm \
+        glib2 \
+        gobject-introspection \
+        gtk3 \
+        webkit2gtk \
+        libappindicator-gtk3 \
+        librsvg
 }
 
 install_alpine() {
@@ -166,7 +185,13 @@ install_alpine() {
         python3 \
         py3-pip \
         nodejs \
-        npm
+        npm \
+        glib-dev \
+        gobject-introspection-dev \
+        gtk+3.0-dev \
+        webkit2gtk-dev \
+        libappindicator-dev \
+        librsvg-dev
 }
 
 case $OS in
@@ -200,5 +225,9 @@ echo ""
 echo "Install Rust if not already installed:"
 echo "  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
 echo ""
-echo "Then build with:"
-echo "  cargo build --release"
+echo "Build options:"
+echo "  Full workspace (includes desktop apps):"
+echo "    cargo build --release"
+echo ""
+echo "  Server only (faster, no GTK needed):"
+echo "    cargo build --release -p botserver -p botlib -p bottest"
