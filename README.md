@@ -5,6 +5,28 @@
 
 ---
 
+## 🎯 QUICK START FOR AI ASSISTANTS
+
+### If You Are an AI Assistant (Claude, ChatGPT, etc.)
+
+**Your goal:** Help with this Rust workspace while following strict rules.
+
+**First thing to do:**
+1. Read this entire README.md
+2. Read `/home/rodriguez/gb/PROMPT.md` (the master development guide)
+3. Read the project-specific PROMPT.md for the crate you're working on
+4. Always ask for clarification if unsure
+
+**Golden rules:**
+- ZERO warnings, ZERO errors - no exceptions
+- Never use `#[allow()]` - fix the code instead
+- Never use `.unwrap()`, `.expect()`, `panic!()`, `todo!()`
+- All secrets go in Vault, not `.env` file
+- Read files before editing them
+- Fix ALL issues in a file at once, then verify
+
+---
+
 ## ⚠️ CRITICAL: Environment Configuration
 
 ### `.env` File - VAULT CONFIGURATION ONLY
@@ -18,8 +40,8 @@ VAULT_TOKEN=<token-generated-by-vault>
 VAULT_CACERT=./botserver-stack/conf/system/certificates/ca/ca.crt
 VAULT_CACHE_TTL=300
 
-# Optional: Override default server port (default: 8088)
-BOTSERVER_PORT=8088
+# Optional: Override default server port (default: 9000)
+BOTSERVER_PORT=9000
 ```
 
 ### ⛔ **NEVER** manually edit `.env` to add:
@@ -49,13 +71,13 @@ All secrets are automatically generated and stored in **Vault** during bootstrap
 Only these variables are allowed outside of Vault:
 
 ```bash
-# Override default server port (default: 8088)
+# Override default server port (default: 9000)
 BOTSERVER_PORT=9000 ./target/debug/botserver
 ```
 
 ---
 
-## Structure
+## 📁 WORKSPACE STRUCTURE
 
 This workspace contains multiple General Bots projects:
 
@@ -78,42 +100,23 @@ gb/
 └── target/            ← Build artifacts
 ```
 
----
+### Project Overview
 
-## CRITICAL: PROMPT.md Files
-
-**Each project has a PROMPT.md that defines its development rules.**
-
-The diagnostics tool reads and respects these PROMPT.md files.
-
-### Hierarchy
-
-1. **`PROMPT.md`** (this directory) - Workspace-wide rules
-2. **`botapp/PROMPT.md`** - Desktop app specifics
-3. **`botserver/PROMPT.md`** - Server specifics
-4. **`botlib/PROMPT.md`** - Library specifics
-5. **`botui/PROMPT.md`** - UI specifics
-6. **`botbook/PROMPT.md`** - Documentation specifics
-7. **`bottest/PROMPT.md`** - Test specifics
-
-**ALWAYS read the relevant PROMPT.md before working on a project.**
+| Crate | Purpose | Port | Tech Stack |
+|-------|---------|------|------------|
+| **botserver** | Main API server, business logic | 9000 | Axum, Diesel, Rhai BASIC |
+| **botui** | Web UI server (dev) + proxy | 3000 | Axum, HTML/HTMX/CSS |
+| **botapp** | Desktop app wrapper | - | Tauri 2 |
+| **botlib** | Shared library | - | Core types, errors |
+| **botbook** | Documentation | - | mdBook |
+| **bottest** | Integration tests | - | tokio-test |
+| **botdevice** | IoT/Device support | - | Rust |
+| **botmodels** | Data models visualization | - | - |
+| **botplugin** | Browser extension | - | JS |
 
 ---
 
-## Main Directive
-
-**LOOP AND COMPACT UNTIL 0 WARNINGS - MAXIMUM YOLO**
-
-- 0 warnings
-- 0 errors
-- Trust project diagnostics
-- Respect all rules
-- No `#[allow()]` in source code
-- Real code fixes only
-
----
-
-## Quick Start
+## 🚀 GETTING STARTED
 
 ### First Time Setup
 
@@ -143,15 +146,168 @@ cargo build -p botserver
 BOTSERVER_PORT=9000 ./target/debug/botserver
 ```
 
+### Development Mode (Both Servers)
+
+```bash
+# Terminal 1: Start botserver
+./target/debug/botserver
+
+# Terminal 2: Start botui (for UI development)
+cd botui
+BOTSERVER_URL="http://localhost:9000" cargo run
+```
+
 ### Access Points
 
-- **API Server**: http://localhost:8088 (or custom BOTSERVER_PORT)
+- **API Server**: http://localhost:9000 (or custom BOTSERVER_PORT)
 - **BotUI**: http://localhost:3000
 - **Vault UI**: https://localhost:8200/ui (requires init.json token)
 
 ---
 
-## Auto-Installed During Bootstrap
+## 🤖 HOW TO WORK LIKE CLAUDE CODE
+
+### Core Principles
+
+When helping with this codebase, follow these principles:
+
+1. **READ BEFORE EDITING**
+   - Always read the full file before making changes
+   - Understand the existing patterns and conventions
+   - Look at similar files to understand the pattern
+
+2. **FIX ALL ISSUES AT ONCE**
+   - When you find multiple errors in a file, fix ALL of them
+   - Do NOT make partial edits - rewrite the full file if needed
+   - Group changes by file, not by error type
+
+3. **ZERO TOLERANCE FOR WARNINGS**
+   - Warnings are treated as errors
+   - Never use `#[allow()]` to suppress warnings
+   - Fix the underlying issue, don't hide it
+
+4. **SECURITY FIRST**
+   - No `.unwrap()`, `.expect()`, `panic!()`, `todo!()` in production code
+   - Use `SafeCommand` for all external command execution
+   - Use `ErrorSanitizer` for error messages sent to clients
+   - All secrets go in Vault, never in environment variables
+
+5. **VERIFICATION LAST**
+   - Fix all issues offline first
+   - Only run build/diagnostics after ALL fixes are complete
+   - Loop until 0 warnings, 0 errors
+
+### Typical Workflow
+
+```
+START TASK
+  ↓
+READ PROMPT.md (workspace + project-specific)
+  ↓
+UNDERSTAND CONTEXT (read relevant files)
+  ↓
+IDENTIFY ISSUES (compile errors, warnings, logic bugs)
+  ↓
+GROUP BY FILE (organize changes by file, not by issue)
+  ↓
+FIX ALL ISSUES IN EACH FILE (full rewrites, not partial edits)
+  ↓
+VERIFY (build/diagnostics)
+  ↓
+ANY WARNINGS/ERRORS?
+  ↓ YES
+  ↓
+  FIX AND REPEAT
+  ↓
+DONE ✓
+```
+
+### Decision-Making Framework
+
+When you need to make a decision:
+
+1. **Is there an existing pattern?**
+   - Search the codebase for similar code
+   - Follow the existing pattern
+   - Consistency is more important than your preference
+
+2. **Is it covered in PROMPT.md?**
+   - Check the workspace PROMPT.md
+   - Check the project-specific PROMPT.md
+   - Follow the rules strictly
+
+3. **Is it a security issue?**
+   - Default to the most secure option
+   - Never bypass security for convenience
+   - Ask if unsure
+
+4. **Will it affect other parts?**
+   - Check for dependencies
+   - Update related files
+   - Test thoroughly
+
+### Common Tasks
+
+#### Task 1: Fix Compilation Errors
+
+```
+1. Get the full error list
+2. Read each file with errors
+3. Fix ALL errors in each file
+4. Write the complete fixed file
+5. Run cargo build to verify
+6. Repeat if needed
+```
+
+#### Task 2: Add a New Feature
+
+```
+1. Understand the requirement
+2. Find similar existing features
+3. Read the relevant files
+4. Design the implementation
+5. Write the code following existing patterns
+6. Update tests if needed
+7. Verify with build/diagnostics
+```
+
+#### Task 3: Debug an Issue
+
+```
+1. Read the error message carefully
+2. Read the relevant code
+3. Understand the context
+4. Identify the root cause
+5. Fix the issue
+6. Verify the fix
+```
+
+### What NOT to Do
+
+❌ **Don't** make partial edits - fix everything in a file at once
+❌ **Don't** suppress warnings with `#[allow()]` - fix the code
+❌ **Don't** use `.unwrap()` or `.expect()` - handle errors properly
+❌ **Don't** add secrets to `.env` - use Vault
+❌ **Don't** run build after each small fix - batch your fixes
+❌ **Don't** guess - read the code and understand it first
+❌ **Don't** add comments - make code self-documenting
+❌ **Don't** leave unused code - delete it
+
+### What TO Do
+
+✅ **Do** read files before editing
+✅ **Do** fix all issues in a file at once
+✅ **Do** follow existing patterns
+✅ **Do** handle errors properly with `?` operator
+✅ **Do** use `SafeCommand` for external commands
+✅ **Do** store secrets in Vault
+✅ **Do** verify after all fixes are complete
+✅ **Do** delete unused code
+✅ **Do** ask for clarification when unsure
+
+---
+
+## 🔧 AUTO-INSTALLED DURING BOOTSTRAP
 
 BotServer automatically generates and stores all required secrets in Vault during bootstrap:
 
@@ -163,29 +319,62 @@ BotServer automatically generates and stores all required secrets in Vault durin
 
 ---
 
-## Development Workflow
+## 🧪 DEVELOPMENT WORKFLOW
 
-1. Read `PROMPT.md` (workspace-level rules)
-2. Read `<project>/PROMPT.md` (project-specific rules)
-3. Use diagnostics tool to check warnings
-4. Fix all warnings with full file rewrites
-5. Verify with diagnostics after each file
-6. Never suppress warnings with `#[allow()]`
+### Step-by-Step Process
+
+1. **Read the rules**
+   - Read `PROMPT.md` (workspace-level rules)
+   - Read `<project>/PROMPT.md` (project-specific rules)
+
+2. **Check the current state**
+   - Use diagnostics tool to check warnings
+   - Or run `cargo build -p botserver` to see errors
+
+3. **Fix issues systematically**
+   - Group errors by file
+   - Read each file completely
+   - Fix ALL issues in that file
+   - Write the complete fixed file
+
+4. **Verify your changes**
+   - Run build/diagnostics after ALL fixes
+   - Check for any new warnings/errors
+   - Repeat until 0 warnings, 0 errors
+
+5. **Commit your changes**
+   - Use git to commit (if requested)
+   - Follow commit message conventions
+
+### The Loop
+
+```
+WHILE (warnings > 0 OR errors > 0):
+  1. Pick file with issues
+  2. Read entire file
+  3. Fix ALL issues in file
+  4. Write file once
+  5. Run build/diagnostics
+END WHILE
+
+SUCCESS: 0 warnings, 0 errors
+```
 
 ---
 
-## E2E Tests (YOLO Mode)
+## 🧪 E2E TESTS (YOLO Mode)
 
 **IMPORTANT: E2E tests require running services and follow YOLO mode principles:**
 
 ### Setup
 - **BotUI must be running** on `http://localhost:3000` (frontend client)
-- **BotServer API** on `https://localhost:8088` (backend)
+- **BotServer API** on `https://localhost:9000` (backend)
 - Tests use the **existing BotUI** for UI interaction
 - API calls go to the **BotServer**
 - Client-side JS errors are **infrastructure-defined** (not test failures)
 
 ### Running E2E Tests
+
 ```bash
 # Build botserver first
 cargo build -p botserver
@@ -198,11 +387,13 @@ BOTSERVER_BIN=./target/debug/botserver cargo test -p bottest --test e2e test_cha
 ```
 
 ### Browser Visibility
+
 - Tests run **non-headless by default** (visible browser)
 - Set `HEADLESS=1` env var for headless mode
 - Set `CI=1` for CI environments (auto headless)
 
 ### YOLO Mode Principles
+
 - Tests are **infrastructure-aware** - they detect existing services
 - Client JS errors don't fail tests unless explicitly tested
 - Login/auth tests may skip if infrastructure not ready
@@ -210,7 +401,64 @@ BOTSERVER_BIN=./target/debug/botserver cargo test -p bottest --test e2e test_cha
 
 ---
 
-## Git Structure
+## 📚 CRITICAL: PROMPT.md FILES
+
+**Each project has a PROMPT.md that defines its development rules.**
+
+The diagnostics tool reads and respects these PROMPT.md files.
+
+### Hierarchy
+
+1. **`PROMPT.md`** (this directory) - Workspace-wide rules
+2. **`botapp/PROMPT.md`** - Desktop app specifics
+3. **`botserver/PROMPT.md`** - Server specifics
+4. **`botlib/PROMPT.md`** - Library specifics
+5. **`botui/PROMPT.md`** - UI specifics
+6. **`botbook/PROMPT.md`** - Documentation specifics
+7. **`bottest/PROMPT.md`** - Test specifics
+
+**ALWAYS read the relevant PROMPT.md before working on a project.**
+
+---
+
+## 🎯 MAIN DIRECTIVE
+
+**LOOP AND COMPACT UNTIL 0 WARNINGS - MAXIMUM YOLO**
+
+- 0 warnings
+- 0 errors
+- Trust project diagnostics
+- Respect all rules
+- No `#[allow()]` in source code
+- Real code fixes only
+
+---
+
+## 📋 BUILD COMMANDS
+
+```bash
+# Check single crate
+cargo check -p botserver
+
+# Build workspace
+cargo build
+
+# Build release (optimized)
+cargo build --release -p botserver
+
+# Run tests
+cargo test -p bottest
+
+# Run with specific port
+BOTSERVER_PORT=9000 ./target/debug/botserver
+
+# Run botui in development
+cd botui && BOTSERVER_URL="http://localhost:9000" cargo run
+```
+
+---
+
+## 🏗️ Git Structure
 
 **Note:** Each subproject has its own git repository. This root repository only tracks workspace-level files:
 
@@ -218,12 +466,20 @@ BOTSERVER_BIN=./target/debug/botserver cargo test -p bottest --test e2e test_cha
 - `Cargo.toml` - Workspace configuration
 - `README.md` - This file
 - `.gitignore` - Ignore patterns
+- `config/` - Configuration files
 
 Subprojects (botapp, botserver, etc.) are **not** git submodules - they are independent repositories.
 
+### Git Workflow
+
+When committing changes:
+1. Check which files belong to which repository
+2. Commit to each repository separately
+3. Push to all remotes (github, pragmatismo, etc.)
+
 ---
 
-## Rules Summary
+## 📏 RULES SUMMARY
 
 ```
 ✅ FULL FILE REWRITES ONLY
@@ -234,7 +490,7 @@ Subprojects (botapp, botserver, etc.) are **not** git submodules - they are inde
 
 ❌ NEVER use #[allow()] in source code
 ❌ NEVER use partial edits
-❌ NEVER run cargo check/clippy manually
+❌ NEVER run cargo check/clippy manually during fixing
 ❌ NEVER leave unused code
 ❌ NEVER use .unwrap()/.expect()
 ❌ NEVER use panic!/todo!/unimplemented!()
@@ -244,14 +500,51 @@ Subprojects (botapp, botserver, etc.) are **not** git submodules - they are inde
 
 ---
 
-## Links
+## 🔗 Useful Links
 
-- Main Server: http://localhost:8081 (or custom BOTSERVER_PORT)
-- Desktop App: Uses Tauri to wrap botui
-- Documentation: See botbook/
+- **API Server**: http://localhost:9000 (or custom BOTSERVER_PORT)
+- **BotUI**: http://localhost:3000
+- **Vault UI**: https://localhost:8200/ui
+- **Desktop App**: Uses Tauri to wrap botui
+- **Documentation**: See botbook/
 
 ---
 
-## License
+## 📞 Troubleshooting
+
+### BotServer won't start
+
+1. Check if `botserver-stack/` exists and is properly initialized
+2. Check `.env` file for correct Vault configuration
+3. Check if Vault is running: `ps aux | grep vault`
+4. Check logs in `botserver-stack/logs/`
+
+### Build fails with "Killed"
+
+Memory issue - reduce parallel jobs:
+```bash
+CARGO_BUILD_JOBS=1 cargo check -p botserver
+```
+
+### JWT_SECRET errors
+
+The JWT secret is auto-generated and stored in Vault. Do NOT add it to `.env`.
+
+### pdftotext warnings
+
+pdftotext is auto-installed during bootstrap. If warnings persist:
+1. Check if `botserver-stack/bin/shared/pdftotext` exists
+2. Delete `botserver-stack/` and restart botserver to re-bootstrap
+
+### Port already in use
+
+Change the port:
+```bash
+BOTSERVER_PORT=9000 ./target/debug/botserver
+```
+
+---
+
+## 📄 License
 
 See individual project repositories for license information.
