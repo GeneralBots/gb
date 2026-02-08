@@ -508,6 +508,15 @@ When committing changes:
 - **Desktop App**: Uses Tauri to wrap botui
 - **Documentation**: See botbook/
 
+### Issues & Bug Reports
+
+**⚠️ IMPORTANT:** All issues, bug reports, and feature requests should be created on the **[botserver repository](https://github.com/GeneralBots/botserver/issues)**, **NOT** in this gb repository.
+
+The gb repository only tracks workspace-level configuration files. For:
+- Bug reports → https://github.com/GeneralBots/botserver/issues
+- Feature requests → https://github.com/GeneralBots/botserver/issues
+- Questions → https://github.com/GeneralBots/botserver/discussions
+
 ---
 
 ## 📞 Troubleshooting
