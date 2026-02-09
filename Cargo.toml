@@ -109,6 +109,7 @@ url = "2.5"
 dirs = "5.0"
 tempfile = "3"
 walkdir = "2.5.0"
+notify = "8.0"
 
 # ─── COMPRESSION / ARCHIVES ───
 flate2 = "1.0"

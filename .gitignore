@@ -2,7 +2,8 @@
 target/
 *.out
 bin/
-
+*.png
+*.jpg
 # Logs
 *.log
 *logfile*
@@ -36,6 +37,9 @@ work
 Cargo.lock
 .kiro
 config
+
+# Data directory (contains bot configs and API keys)
+data/
 
 # Playwright
 node_modules/
