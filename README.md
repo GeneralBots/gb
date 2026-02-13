@@ -439,6 +439,64 @@ cargo test -p bottest
 3. Run [Weekly Maintenance Tasks](#-weekly-maintenance-tasks) to keep codebase healthy
 4. Read project-specific READMEs in [Project-Specific Guidelines](#-project-specific-guidelines)
 
+## 🎭 Playwright Browser Testing - YOLO Mode
+
+### YOLO Mode Instructions for LLMs
+
+**When user requests to start YOLO mode with Playwright:**
+
+1. **Start the browser** - Use `mcp__playwright__browser_navigate` to open http://localhost:3000
+2. **Take snapshot** - Use `mcp__playwright__browser_snapshot` to see current page state
+3. **Test user flows** - Use click, type, fill_form, etc. to interact with UI
+4. **Verify results** - Check for expected content, errors in console, network requests
+5. **Report findings** - Always include screenshot evidence with `browser_take_screenshot`
+
+**Available Playwright MCP Tools:**
+- `browser_navigate` - Navigate to URL
+- `browser_snapshot` - Get accessibility tree (better than screenshots for analysis)
+- `browser_take_screenshot` - Capture visual state
+- `browser_click` - Click elements (provide ref from snapshot)
+- `browser_type` - Type text into inputs
+- `browser_fill_form` - Fill multiple form fields at once
+- `browser_console_messages` - Check for JavaScript errors
+- `browser_network_requests` - Inspect API calls
+- `browser_close` - Close browser when done
+
+**YOLO Testing Workflow:**
+```
+1. Navigate → http://localhost:3000
+2. Snapshot → Analyze page structure
+3. Click → Target element using ref from snapshot
+4. Wait → For navigation/updates (browser_wait_for)
+5. Verify → Console messages, network status
+6. Screenshot → Document test results
+```
+
+**Testing Checklist:**
+- ✅ UI loads without errors
+- ✅ Navigation works between sections
+- ✅ Forms submit correctly
+- ✅ WebSocket connections establish
+- ✅ Console shows no JavaScript errors
+- ✅ Network requests return 200/201/204
+
+**Critical Test Flows:**
+- **Login/Authentication** → Navigate, enter credentials, verify session
+- **Bot Creation** → Click "New Bot", fill form, verify creation
+- **Chat Interface** → Send message, verify WebSocket response
+- **File Upload** → Upload .bas file, verify compilation
+- **Drive Sync** → Trigger sync, verify files appear
+
+**Error Handling in YOLO Mode:**
+- If navigation fails: Check if servers running (`ps aux | grep botserver`)
+- If element not found: Take snapshot to debug current page state
+- If console errors: Extract and report to user for fixing
+- If network failures: Check API endpoints and CORS configuration
+
+### Integration Testing
+
+For automated test suites, prefer `cargo test -p bottest` for backend logic and Playwright YOLO mode for full-stack UI testing.
+
 ## 🧪 Testing Strategy
 
 ### Unit Tests
