@@ -35,6 +35,35 @@ For comprehensive documentation, see **[docs.pragmatismo.com.br](https://docs.pr
 - **Env file:** `botserver/.env`
 - **Stack:** `botserver-stack/`
 - **UI Files:** `botui/ui/suite/`
+- **Local Bot Data:** `/opt/gbo/data/` (place `.gbai` packages here)
+
+### Local Bot Data Directory
+
+Place local bot packages in `/opt/gbo/data/` for automatic loading and monitoring:
+
+**Directory Structure:**
+```
+/opt/gbo/data/
+└── mybot.gbai/
+    ├── mybot.gbdialog/
+    │   ├── start.bas
+    │   └── main.bas
+    └── mybot.gbot/
+        └── config.csv
+```
+
+**Features:**
+- **Auto-loading:** Bots automatically mounted on server startup
+- **Auto-compilation:** `.bas` files compiled to `.ast` on change
+- **Auto-creation:** New bots automatically added to database
+- **Hot-reload:** Changes trigger immediate recompilation
+- **Monitored by:** LocalFileMonitor and ConfigWatcher services
+
+**Usage:**
+1. Create bot directory structure in `/opt/gbo/data/`
+2. Add `.bas` files to `<bot_name>.gbai/<bot_name>.gbdialog/`
+3. Server automatically detects and loads the bot
+4. Optional: Add `config.csv` for bot configuration
 
 ---
 
