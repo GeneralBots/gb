@@ -1,5 +1,24 @@
-RULE 0: Never call tool_call while thinking. Ex NEVER do this: Let me check if the API call succeeded:<tool_call>terminal<arg_key>command</arg_key><arg_value>tail -50 botserver.log | grep -E "LLM streaming error|error|Error|SUCCESS|200"</arg_value><arg_key>cd</arg_key><arg_value>gb</arg_value></tool_call>. First finish Thinking, then emit a explanation and tool!
 # General Bots Workspace
+
+## ⚠️ CRITICAL SECURITY WARNING
+
+**NEVER CREATE FILES WITH SECRETS IN THE REPOSITORY ROOT**
+
+Secret files MUST be placed in `/tmp/` only:
+- ✅ `/tmp/vault-token-gb` - Vault root token
+- ✅ `/tmp/vault-unseal-key-gb` - Vault unseal key
+- ❌ `vault-unseal-keys` - FORBIDDEN (tracked by git)
+- ❌ `start-and-unseal.sh` - FORBIDDEN (contains secrets)
+
+**Files added to .gitignore:** `vault-unseal-keys`, `start-and-unseal.sh`, `vault-token-*`
+
+**Why `/tmp/`?**
+- Cleared on reboot (ephemeral)
+- Not tracked by git
+- Standard Unix security practice
+- Prevents accidental commits
+
+---
 
 
 **Version:** 6.2.0  
@@ -19,7 +38,7 @@ For comprehensive documentation, see **[docs.pragmatismo.com.br](https://docs.pr
 
 | Crate | Purpose | Port | Tech Stack |
 |-------|---------|------|------------|
-| **botserver** | Main API server, business logic | 8088 | Axum, Diesel, Rhai BASIC |
+| **botserver** | Main API server, business logic | 9000 | Axum, Diesel, Rhai BASIC |
 | **botui** | Web UI server (dev) + proxy | 3000 | Axum, HTML/HTMX/CSS |
 | **botapp** | Desktop app wrapper | - | Tauri 2 |
 | **botlib** | Shared library | - | Core types, errors |
