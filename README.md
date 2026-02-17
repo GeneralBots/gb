@@ -92,15 +92,36 @@ Place local bot packages in `/opt/gbo/data/` for automatic loading and monitorin
 
 BotServer automatically installs, configures, and manages all infrastructure components on first run. **DO NOT manually start these services** - BotServer handles everything.
 
-| Component | Purpose | Port | Binary Location | Managed By |
-|-----------|---------|------|-----------------|------------|
-| **Vault** | Secrets management | 8200 | `botserver-stack/bin/vault/vault` | botserver |
-| **PostgreSQL** | Primary database | 5432 | `botserver-stack/bin/tables/bin/postgres` | botserver |
-| **MinIO** | Object storage (S3-compatible) | 9000/9001 | `botserver-stack/bin/drive/minio` | botserver |
-| **Zitadel** | Identity/Authentication | 8300 | `botserver-stack/bin/directory/zitadel` | botserver |
-| **Qdrant** | Vector database (embeddings) | 6333 | `botserver-stack/bin/vector_db/qdrant` | botserver |
-| **Valkey** | Cache/Queue (Redis-compatible) | 6379 | `botserver-stack/bin/cache/valkey-server` | botserver |
-| **Llama.cpp** | Local LLM server | 8081 | `botserver-stack/bin/llm/build/bin/llama-server` | botserver |
+**Automatic Service Lifecycle:**
+1. **Start**: When botserver starts, it automatically launches all infrastructure components (PostgreSQL, Vault, MinIO, Valkey, Qdrant, etc.)
+2. **Credentials**: BotServer retrieves all service credentials (passwords, tokens, API keys) from Vault
+3. **Connection**: BotServer uses these credentials to establish secure connections to each service
+4. **Query**: All database queries, cache operations, and storage requests are authenticated using Vault-managed credentials
+
+**Credential Flow:**
+```
+botserver starts
+    ↓
+Launch PostgreSQL, MinIO, Valkey, Qdrant
+    ↓
+Connect to Vault
+    ↓
+Retrieve service credentials (from database)
+    ↓
+Authenticate with each service using retrieved credentials
+    ↓
+Ready to handle requests
+```
+
+| Component | Purpose | Port | Binary Location | Credentials From |
+|-----------|---------|------|-----------------|------------------|
+| **Vault** | Secrets management | 8200 | `botserver-stack/bin/vault/vault` | Auto-unsealed |
+| **PostgreSQL** | Primary database | 5432 | `botserver-stack/bin/tables/bin/postgres` | Vault → database |
+| **MinIO** | Object storage (S3-compatible) | 9000/9001 | `botserver-stack/bin/drive/minio` | Vault → database |
+| **Zitadel** | Identity/Authentication | 8300 | `botserver-stack/bin/directory/zitadel` | Vault → database |
+| **Qdrant** | Vector database (embeddings) | 6333 | `botserver-stack/bin/vector_db/qdrant` | Vault → database |
+| **Valkey** | Cache/Queue (Redis-compatible) | 6379 | `botserver-stack/bin/cache/valkey-server` | Vault → database |
+| **Llama.cpp** | Local LLM server | 8081 | `botserver-stack/bin/llm/build/bin/llama-server` | Vault → database |
 
 ### 📦 Component Installation System
 
@@ -319,9 +340,12 @@ cd botserver-stack/bin/cache && ./valkey-cli ping
 The script handles BOTH servers properly:
 1. Stop existing processes cleanly
 2. Build botserver and botui sequentially (no race conditions)
-3. Start botserver in background → auto-bootstrap infrastructure
-4. Start botui in background → proxy to botserver
-5. Show process IDs and monitoring commands
+3. Start botserver in background → **automatically starts all infrastructure services (PostgreSQL, Vault, MinIO, Valkey, Qdrant)**
+4. BotServer retrieves credentials from Vault and authenticates with all services
+5. Start botui in background → proxy to botserver
+6. Show process IDs and monitoring commands
+
+**Infrastructure services are fully automated - no manual configuration required!**
 
 **Monitor startup:**
 ```bash
@@ -383,8 +407,16 @@ All infrastructure services (PostgreSQL, Vault, Redis, Qdrant, MinIO, etc.) are 
 - **Configurations:** `botserver-stack/conf/`
 - **Data storage:** `botserver-stack/data/`
 - **Service logs:** `botserver-stack/logs/` (check here for troubleshooting)
+- **Credentials:** Stored in Vault, retrieved by botserver at startup
 
-**Do NOT install or reference global PostgreSQL, Redis, or other services.** When botserver starts, it automatically launches all required stack services. If you encounter service errors, check the individual service logs in `./botserver-stack/logs/[service]/` directories.
+**Do NOT install or reference global PostgreSQL, Redis, or other services.** When botserver starts, it automatically:
+1. Launches all required stack services
+2. Connects to Vault
+3. Retrieves credentials from the `bot_configuration` database table
+4. Authenticates with each service using retrieved credentials
+5. Begins handling requests with authenticated connections
+
+If you encounter service errors, check the individual service logs in `./botserver-stack/logs/[service]/` directories.
 
 ### UI File Deployment - Production Options
 
@@ -497,7 +529,8 @@ cargo test -p bottest
 2. **Take snapshot** - Use `mcp__playwright__browser_snapshot` to see current page state
 3. **Test user flows** - Use click, type, fill_form, etc. to interact with UI
 4. **Verify results** - Check for expected content, errors in console, network requests
-5. **Report findings** - Always include screenshot evidence with `browser_take_screenshot`
+5. **Validate backend** - Check database and services to confirm process completion
+6. **Report findings** - Always include screenshot evidence with `browser_take_screenshot`
 
 **Available Playwright MCP Tools:**
 - `browser_navigate` - Navigate to URL
@@ -510,14 +543,42 @@ cargo test -p bottest
 - `browser_network_requests` - Inspect API calls
 - `browser_close` - Close browser when done
 
+**Bot-Specific Testing URL Pattern:**
+```
+http://localhost:3000/<botname>
+```
+Navigate directly to a specific bot's interface to test that bot's functionality.
+
 **YOLO Testing Workflow:**
 ```
-1. Navigate → http://localhost:3000
+1. Navigate → http://localhost:3000/<botname> or http://localhost:3000
 2. Snapshot → Analyze page structure
 3. Click → Target element using ref from snapshot
 4. Wait → For navigation/updates (browser_wait_for)
 5. Verify → Console messages, network status
-6. Screenshot → Document test results
+6. Validate Backend → Check database tables and service logs
+7. Screenshot → Document test results
+```
+
+**Backend Validation Checks:**
+After UI interactions, validate backend state:
+
+```bash
+# Check database for created/updated records
+psql -h localhost -p 5432 -U postgres -d botdb -c "SELECT * FROM bots WHERE name = '<botname>';"
+psql -h localhost -p 5432 -U postgres -d botdb -c "SELECT * FROM sessions WHERE bot_id = '<bot_id>' ORDER BY created_at DESC LIMIT 5;"
+
+# Check service logs for errors
+tail -50 botserver-stack/logs/tables/postgres.log
+tail -50 botserver-stack/logs/vault/vault.log
+tail -50 botserver-stack/logs/cache/valkey.log
+
+# Verify vector embeddings (for knowledge bases)
+curl -s http://localhost:6333/collections/website_<hash>/points/scroll | jq '.result.points | length'
+
+# Check message queue/worker status
+redis-cli -p 6379 PING
+redis-cli -p 6379 KEYS "session:*"
 ```
 
 **Testing Checklist:**
@@ -527,19 +588,35 @@ cargo test -p bottest
 - ✅ WebSocket connections establish
 - ✅ Console shows no JavaScript errors
 - ✅ Network requests return 200/201/204
+- ✅ Database records created/updated correctly
+- ✅ Service logs show no errors
+- ✅ Vector embeddings populated (if applicable)
+- ✅ Cache/queue operations succeed
 
 **Critical Test Flows:**
-- **Login/Authentication** → Navigate, enter credentials, verify session
-- **Bot Creation** → Click "New Bot", fill form, verify creation
-- **Chat Interface** → Send message, verify WebSocket response
-- **File Upload** → Upload .bas file, verify compilation
-- **Drive Sync** → Trigger sync, verify files appear
+- **Login/Authentication** → Navigate, enter credentials, verify session in database
+- **Bot Creation** → Navigate to `/botname`, click "New Bot", fill form, verify creation in `bots` table
+- **Chat Interface** → Send message to `/botname`, verify WebSocket response, check `messages` table
+- **File Upload** → Upload .bas file to `/botname`, verify compilation, check `botserver.log` for compile results
+- **Drive Sync** → Trigger sync from `/botname`, verify files appear, check `drive_monitor` logs
+- **Knowledge Base** → Add document via `/botname`, verify embeddings in Qdrant, check `website_embeddings` table
+- **Tool Execution** → Trigger tool from chat, verify execution in logs, check side effects in database
+
+**End-to-End Process Validation:**
+1. **Frontend:** User action via Playwright (click, type, submit)
+2. **Network:** Capture API request via `browser_network_requests`
+3. **Backend:** Check botserver.log for request processing
+4. **Database:** Query relevant tables for state changes
+5. **Services:** Verify component logs (PostgreSQL, Vault, Qdrant, etc.)
+6. **Response:** Verify UI update via Playwright snapshot
 
 **Error Handling in YOLO Mode:**
 - If navigation fails: Check if servers running (`ps aux | grep botserver`)
 - If element not found: Take snapshot to debug current page state
 - If console errors: Extract and report to user for fixing
 - If network failures: Check API endpoints and CORS configuration
+- If database mismatch: Check database logs, verify transaction committed
+- If service errors: Check component logs in `botserver-stack/logs/`
 
 ### Integration Testing
 
