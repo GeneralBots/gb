@@ -1,5 +1,0 @@
-[GET] https://chat.pragmatismo.com.br/api/product => [200] 
-[GET] https://chat.pragmatismo.com.br/api/product => [200] 
-[GET] https://chat.pragmatismo.com.br/suite/chat/chat.html => [200] 
-[GET] https://chat.pragmatismo.com.br/api/bot/config?bot_name=default => [200] 
-[GET] https://chat.pragmatismo.com.br/api/auth?bot_name=default => [200] 

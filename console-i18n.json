@@ -1,7 +1,0 @@
-Total messages: 36 (Errors: 0, Warnings: 4)
-Returning 4 messages for level "warning"
-
-[WARNING] [GBSecurity] NO TOKEN - request will be unauthenticated @ https://chat.pragmatismo.com.br/suite/js/security-bootstrap.js?v=20260207b:157
-[WARNING] i18n: Missing translation key: chat-mention-title @ https://chat.pragmatismo.com.br/suite/js/i18n.js:129
-[WARNING] i18n: Missing translation key: chat-mention-title @ https://chat.pragmatismo.com.br/suite/js/i18n.js:129
-[WARNING] i18n: Missing translation key: chat-mention-title @ https://chat.pragmatismo.com.br/suite/js/i18n.js:129

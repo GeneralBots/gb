@@ -32,7 +32,7 @@ botserver-installers/*
 botserver-stack
 TODO*
 work
-
+.swp
 # Lock file (regenerated from Cargo.toml)
 Cargo.lock
 .kiro

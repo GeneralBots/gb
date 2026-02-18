@@ -354,7 +354,7 @@ tail -f botserver.log botui.log
 
 **Access:**
 - Web UI: http://localhost:3000
-- API: http://localhost:8088
+- API: http://localhost:9000
 
 ### 📊 Monitor & Debug
 
@@ -378,7 +378,7 @@ grep -E " E |W |CLIENT:" botserver.log | tail -20
 
 ```bash
 cd botserver && cargo run -- --noconsole > ../botserver.log 2>&1 &
-cd botui && BOTSERVER_URL="http://localhost:8088" cargo run > ../botui.log 2>&1 &
+cd botui && BOTSERVER_URL="http://localhost:9000" cargo run > ../botui.log 2>&1 &
 ```
 
 ### 🛑 Stop Servers
@@ -396,7 +396,7 @@ rm -rf botserver-stack/data/vault botserver-stack/conf/vault/init.json && ./rest
 
 **Port in use?** Find and kill:
 ```bash
-lsof -ti:8088 | xargs kill -9
+lsof -ti:9000 | xargs kill -9
 lsof -ti:3000 | xargs kill -9
 ```
 
@@ -473,7 +473,7 @@ See `botserver/deploy/README.md` for deployment scripts.
 cd botserver && cargo run -- --noconsole
 
 # Terminal 2: botui  
-cd botui && BOTSERVER_URL="http://localhost:8088" cargo run
+cd botui && BOTSERVER_URL="http://localhost:9000" cargo run
 ```
 
 ### Build Commands
@@ -611,6 +611,9 @@ redis-cli -p 6379 KEYS "session:*"
 6. **Response:** Verify UI update via Playwright snapshot
 
 **Error Handling in YOLO Mode:**
+- Only DEBUG builds, no RELEASE.
+- Query DB as gbuser or get credentials from Vault to connect to DB and check results.
+- Neve stops, do the task until the end, even if in doubt.
 - If navigation fails: Check if servers running (`ps aux | grep botserver`)
 - If element not found: Take snapshot to debug current page state
 - If console errors: Extract and report to user for fixing
@@ -964,7 +967,7 @@ ps aux | grep botserver | grep -v grep
 ```
 
 **Monitoring Dashboard:**
-- **Server Status**: https://localhost:8088 (health endpoint)
+- **Server Status**: https://localhost:9000 (health endpoint)
 - **Logs**: `tail -f botserver.log`
 - **Client Errors**: Look for `CLIENT:` prefix
 - **Server Errors**: Look for `ERROR` or `WARN` prefixes
@@ -1126,13 +1129,13 @@ match x {
 | Server | Port | Purpose |
 |--------|------|---------|
 | **botui** | 3000 | Serves UI files + proxies API to botserver |
-| **botserver** | 8088 | Backend API + embedded UI fallback |
+| **botserver** | 9000 | Backend API + embedded UI fallback |
 
 ### How It Works
 
 ```
 Browser → localhost:3000 → botui (serves HTML/CSS/JS)
-                        → /api/* proxied to botserver:8088
+                        → /api/* proxied to botserver:9000
                         → /suite/* served from botui/ui/suite/
 ```
 
