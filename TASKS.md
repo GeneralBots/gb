@@ -9,10 +9,9 @@
 ## 🔴 P0 — CRITICAL SECURITY FLAWS
 
 ### SEC-01: ✅ RESOLVED — History Clean
-**Status:** ✅ Repositor history rewritten. Sensitive files removed and ignored.
-- [x] `vault-unseal-keys`, `init.json` removed from history (git-filter-repo)
-- [x] Files ignored in `.gitignore`
-- [x] Remote `origin` updated (force pushed)
+**Status:** ✅ Repositor history rewritten (git-filter-repo).
+- [x] `vault-unseal-keys`, `init.json` removed
+- [x] Remote `origin` force-pushed
 
 ### SEC-02: ✅ PARTIALLY RESOLVED — `.env` exposure
 **Status:** ✅ Mitigated (Untracked). **Rotation needed.**
@@ -48,14 +47,15 @@
 - [x] Fixed syntax and logic in `validate_origin`
 
 ### IMP-14: 🟡 IN PROGRESS — Code Cleanup (TODOs)
-**Status:** References cleaned. Features pending.
-- [x] Removed stale references to `TODO-refactor1.md`
-- [ ] Implement `drive_handlers.rs` (Drive stubbed)
-- [ ] Implement `admin_invitations.rs` (Schema missing)
+**Status:** Features partially implemented.
+- [x] Cleaned stale README references
+- [x] **IMPLEMENTED `drive_handlers.rs`** (S3 Integration Active)
+- [ ] Implement `admin_invitations.rs` (Stubbed)
+- [ ] Remaining minor TODOs
 
-### IMP-15: 🟡 IN PROGRESS — Integration Tests
-**Status:** Tool installing (`cargo-tarpaulin` compiling in background).
-- [ ] Generate coverage report once installed
+### IMP-15: 🟡 READY — Integration Tests
+**Status:** Tool installed (`cargo-tarpaulin` available).
+- [ ] Generate coverage report (Run `cargo tarpaulin --out Html`)
 
 ---
 
