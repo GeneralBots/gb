@@ -167,7 +167,14 @@ match x {
 
 ## ❌ Absolute Prohibitions
 
-- ❌ **NEVER** use `.unwrap()` or `.expect()` in production code (tests OK)
+- ❌ **NEVER** build in release mode - ONLY debug builds allowed
+- ❌ **NEVER** use `--release` flag on ANY cargo command
+- ❌ **NEVER** use `--all-targets` with clippy - too slow (1m 44s without vs 10min+ with)
+- ❌ **NEVER** use `--all-features` unless testing specific feature gates
+- ❌ **ALWAYS** use: `cargo clippy --workspace` (DEBUG mode, lib + bin only)
+- ❌ **NEVER** run `cargo build` - use `cargo check` for syntax verification
+
+**Current Status:** ✅ **0 clippy warnings** (down from 61 - PERFECT SCORE in YOLO mode)
 - ❌ **NEVER** use `panic!()`, `todo!()`, `unimplemented!()`
 - ❌ **NEVER** use `Command::new()` directly - use `SafeCommand`
 - ❌ **NEVER** return raw error strings to HTTP clients
@@ -178,6 +185,7 @@ match x {
 - ❌ **NEVER** use CDN links - all assets must be local
 - ❌ **NEVER** use `cargo clean` - causes 30min rebuilds, use `./reset.sh` for database issues
 - ❌ **NEVER** create `.md` documentation files without checking `botbook/` first
+- ❌ **NEVER** comment out code - FIX it or DELETE it entirely
 
 ---
 

@@ -175,7 +175,7 @@ indicatif = "0.18.0"
 
 # ─── MEMORY ALLOCATOR ───
 tikv-jemallocator = "0.6"
-tikv-jemalloc-ctl = { version = "0.6", default-features = false }
+tikv-jemalloc-ctl = { version = "0.6", default-features = false, features = ["stats"] }
 
 # ─── SECRETS / VAULT ───
 vaultrs = "0.7"

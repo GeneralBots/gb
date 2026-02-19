@@ -1413,6 +1413,7 @@ dependencies = [
  "tower-http",
  "tracing",
  "umya-spreadsheet",
+ "url",
  "urlencoding",
  "uuid",
  "vaultrs",
