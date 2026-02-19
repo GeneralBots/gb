@@ -55,3 +55,8 @@ config/directory_config.json
 vault-unseal-keys
 start-and-unseal.sh
 vault-token-*
+init.json
+*.pem
+*.key
+*.crt
+*.cert
