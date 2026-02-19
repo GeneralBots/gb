@@ -8,10 +8,11 @@
 
 ## 🔴 P0 — CRITICAL SECURITY FLAWS
 
-### SEC-01: 🔴 PENDING — History Clean
-**Status:** 🔴 Blocked. `git-filter-repo` missing in environment.
-- [x] Files untracked (`vault-unseal-keys`, `init.json`)
-- [ ] Needs history rewrite (Requires tool installation)
+### SEC-01: ✅ RESOLVED — History Clean
+**Status:** ✅ Repositor history rewritten. Sensitive files removed and ignored.
+- [x] `vault-unseal-keys`, `init.json` removed from history (git-filter-repo)
+- [x] Files ignored in `.gitignore`
+- [x] Remote `origin` updated (force pushed)
 
 ### SEC-02: ✅ PARTIALLY RESOLVED — `.env` exposure
 **Status:** ✅ Mitigated (Untracked). **Rotation needed.**
@@ -48,14 +49,13 @@
 
 ### IMP-14: 🟡 IN PROGRESS — Code Cleanup (TODOs)
 **Status:** References cleaned. Features pending.
-- [x] Removed stale README references to `TODO-refactor1.md`
+- [x] Removed stale references to `TODO-refactor1.md`
 - [ ] Implement `drive_handlers.rs` (Drive stubbed)
 - [ ] Implement `admin_invitations.rs` (Schema missing)
 
-### IMP-15: 🔴 PENDING — Integration Tests
-**Status:** Blocked. `cargo-tarpaulin` missing.
-- [ ] Install coverage tool
-- [ ] Generate report
+### IMP-15: 🟡 IN PROGRESS — Integration Tests
+**Status:** Tool installing (`cargo-tarpaulin` compiling in background).
+- [ ] Generate coverage report once installed
 
 ---
 
