@@ -91,6 +91,48 @@ let safe_table = sanitize_identifier(&user_table);
 validate_table_name(&safe_table)?;
 ```
 
+### 5. Rate Limiting Strategy (IMP-07)
+
+- **Default Limits:**
+  - General: 100 req/s (global)
+  - Auth: 10 req/s (login endpoints)
+  - API: 50 req/s (per token)
+- **Implementation:**
+  - MUST use `governor` crate
+  - MUST implement per-IP and per-User tracking
+  - WebSocket connections MUST have message rate limits (e.g., 10 msgs/s)
+
+### 6. CSRF Protection (IMP-08)
+
+- **Requirement:** ALL state-changing endpoints (POST, PUT, DELETE, PATCH) MUST require a CSRF token.
+- **Implementation:**
+  - Use `tower_csrf` or similar middleware
+  - Token MUST be bound to user session
+  - Double-Submit Cookie pattern or Header-based token verification
+  - **Exemptions:** API endpoints using Bearer Token authentication (stateless)
+
+### 7. Security Headers (IMP-09)
+
+- **Mandatory Headers on ALL Responses:**
+  - `Content-Security-Policy`: "default-src 'self'; script-src 'self'; object-src 'none';"
+  - `Strict-Transport-Security`: "max-age=63072000; includeSubDomains; preload"
+  - `X-Frame-Options`: "DENY" or "SAMEORIGIN"
+  - `X-Content-Type-Options`: "nosniff"
+  - `Referrer-Policy`: "strict-origin-when-cross-origin"
+  - `Permissions-Policy`: "geolocation=(), microphone=(), camera=()"
+
+### 8. Dependency Management (IMP-10)
+
+- **Pinning:**
+  - Application crates (`botserver`, `botui`) MUST track `Cargo.lock`
+  - Library crates (`botlib`) MUST NOT track `Cargo.lock`
+- **Versions:**
+  - Critical dependencies (crypto, security) MUST use exact versions (e.g., `=1.0.1`)
+  - Regular dependencies MAY use caret (e.g., `1.0`)
+- **Auditing:**
+  - Run `cargo audit` weekly
+  - Update dependencies only via PR with testing
+
 ---
 
 ## ✅ Mandatory Code Patterns
