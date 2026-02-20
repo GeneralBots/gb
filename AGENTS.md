@@ -23,6 +23,7 @@
 ### Reading This Workspace
 
 **For LLMs analyzing this codebase:**
+0. Bots are in /opt/gbo/data primary
 1. Start with **[Component Dependency Graph](../README.md#-component-dependency-graph)** in README to understand relationships
 2. Review **[Module Responsibility Matrix](../README.md#-module-responsibility-matrix)** for what each module does
 3. Study **[Data Flow Patterns](../README.md#-data-flow-patterns)** to understand execution flow
@@ -248,7 +249,7 @@ END LOOP
 
 **When user requests to start YOLO mode with Playwright:**
 
-1. **Start the browser** - Use `mcp__playwright__browser_navigate` to open http://localhost:3000
+1. **Start the browser** - Use `mcp__playwright__browser_navigate` to open http://localhost:3000/{botname}
 2. **Take snapshot** - Use `mcp__playwright__browser_snapshot` to see current page state
 3. **Test user flows** - Use click, type, fill_form, etc.
 4. **Verify results** - Check for expected content, errors in console, network requests
