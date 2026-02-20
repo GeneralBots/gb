@@ -1,42 +1,43 @@
 [submodule "botapp"]
 	path = botapp
-	url = https://github.com/GeneralBots/botapp.git
+	url = ../botapp.git
 
 [submodule "botserver"]
 	path = botserver
-	url = https://github.com/GeneralBots/BotServer.git
+	url = ../BotServer.git
 
 [submodule "botlib"]
 	path = botlib
-	url = https://github.com/GeneralBots/botlib.git
+	url = ../botlib.git
 
 [submodule "botui"]
 	path = botui
-	url = https://github.com/GeneralBots/botui.git
+	url = ../botui.git
 
 [submodule "botbook"]
 	path = botbook
-	url = https://github.com/GeneralBots/botbook.git
+	url = ../botbook.git
 
 [submodule "bottest"]
 	path = bottest
-	url = https://github.com/GeneralBots/bottest.git
+	url = ../bottest.git
 
 [submodule "botdevice"]
 	path = botdevice
-	url = https://github.com/GeneralBots/botdevice.git
+	url = ../botdevice.git
 
 [submodule "botmodels"]
 	path = botmodels
-	url = https://github.com/GeneralBots/botmodels.git
+	url = ../botmodels.git
 
 [submodule "botplugin"]
 	path = botplugin
-	url = https://github.com/GeneralBots/botplugin.git
+	url = ../botplugin.git
 
 [submodule "bottemplates"]
 	path = bottemplates
-	url = https://github.com/GeneralBots/bottemplates.git
+	url = ../bottemplates.git
+
 [submodule ".github"]
 	path = .github
-	url = https://github.com/GeneralBots/.github.git
+	url = ../.github.git
