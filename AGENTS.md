@@ -21,7 +21,7 @@
 ## 🧭 LLM Navigation Guide
 
 ### Reading This Workspace
-
+/opt/gbo/data is a place also for bots.
 **For LLMs analyzing this codebase:**
 0. Bots are in /opt/gbo/data primary
 1. Start with **[Component Dependency Graph](../README.md#-component-dependency-graph)** in README to understand relationships
@@ -167,7 +167,7 @@ match x {
 ---
 
 ## ❌ Absolute Prohibitions
-
+- NEVER search /target folder! It is binary compiled.
 - ❌ **NEVER** build in release mode - ONLY debug builds allowed
 - ❌ **NEVER** use `--release` flag on ANY cargo command
 - ❌ **NEVER** use `--all-targets` with clippy - too slow (1m 44s without vs 10min+ with)
