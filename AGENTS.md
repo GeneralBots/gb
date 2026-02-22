@@ -1,8 +1,12 @@
 # General Bots AI Agent Guidelines
 
 > **⚠️ CRITICAL SECURITY WARNING**
->
+I AM IN DEV ENV, but sometimes, pasting from PROD, do not treat my env as prod! Just fix, to me and push to CI. So I can test in PROD, for a while.
+>Use Playwrigth MCP to start localhost:3000/<bot> now.
 > **NEVER CREATE FILES WITH SECRETS IN THE REPOSITORY ROOT**
+See botserver/src/drive/local_file_monitor.rs to see how to load from /opt/gbo/data the list of development bots.
+- ❌ **NEVER** use `cargo clean` - causes 30min rebuilds, use `./reset.sh` for database issues
+
 >
 > Secret files MUST be placed in `/tmp/` only:
 > - ✅ `/tmp/vault-token-gb` - Vault root token
@@ -184,7 +188,6 @@ match x {
 - ❌ **NEVER** use `_` prefix for unused variables - DELETE or USE them
 - ❌ **NEVER** leave unused imports or dead code
 - ❌ **NEVER** use CDN links - all assets must be local
-- ❌ **NEVER** use `cargo clean` - causes 30min rebuilds, use `./reset.sh` for database issues
 - ❌ **NEVER** create `.md` documentation files without checking `botbook/` first
 - ❌ **NEVER** comment out code - FIX it or DELETE it entirely
 
