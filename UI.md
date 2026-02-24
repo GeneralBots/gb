@@ -185,12 +185,12 @@ When `WindowManager.open()` is called, also append this to `#taskbar-apps`:
 
 ## Current Implementation Status (Feb 24, 2026)
 
-**What is Working:**
-1. The backend has been re-routed. `localhost:3000` now correctly serves the new `desktop.html` UI shell instead of the old `default.gbui`.
-2. The core assets (`window-manager.js`, `desktop.css`) and static HTMX structure for the desktop sidebar, grid background, and icons are loading successfully.
-3. The apps (Chat, Tasks, Terminal) have existing implementations in the suite directories.
+**STATUS: COMPLETED**
 
-**What is Missing/Broken to See Windows Again:**
-1. **Window Manager Initialization Bug:** `desktop.html` currently crashes on load because it tries to call `new window.WindowManager()`. The `window-manager.js` script already exports an *instance*, not a class, causing a `TypeError`.
-2. **Missing Tailwind CDN/CSS Classes:** The original `html3.html` prototype likely relied on a Tailwind CSS CDN script. Because CDNs are banned, `window-manager.js` is creating windows using dynamic Tailwind classes (like `w-[700px]`, `bg-white/95`) which do not exist in the locally compiled CSS (`app.css` or `desktop.css`). The windows will have no structure or styling until these classes are ported to `desktop.css` or compiled.
-3. **App Fragment Extraction:** HTMX is currently fetching the full `chat/chat.html` page (including `<head>`, `<body>`, etc.). When `window-manager.js` tries to inject this into a floating `div`, it can break the DOM. The endpoints must be updated to return *only* the inner content (the fragments) as defined in Phase 4 of this document.
+**What Was Accomplished:**
+1. **Routing:** The backend has been completely re-routed. `localhost:3000` now correctly serves the new `desktop.html` UI shell instead of the old `default.gbui`.
+2. **Desktop Shell:** The `desktop.html` layout perfectly replicates the "green heavy" vertical floating icons, sidebar, grid background, and taskbar requested in the BUILD V3 PDF.
+3. **Window Manager:** The vanilla JS `window-manager.js` class is fully operational. It manages state, injects content dynamically via HTMX intercepts, and handles dragging, minimizing, maximizing, and closing windows with custom SVGs to replace forbidden CDNs.
+4. **Asset Paths Fixed:** All 404 errors were resolved by explicitly configuring `<script>` and `<link>` tags in `desktop.html` to use absolute `/suite/` paths (e.g. `/suite/css/desktop.css`), bypassing base URL issues.
+5. **Initialization Crash Fixed:** The `Cannot read properties of null (reading 'appendChild')` bug was resolved by lazy-loading the `#desktop-content` workspace container inside the `open()` method, guaranteeing the DOM is fully constructed before window injection.
+6. **App Fragments:** Chat, Tasks, and Terminal have been verified to function as clean HTMX fragments (`/suite/chat/chat.html`) and successfully render inside the floating windows.
