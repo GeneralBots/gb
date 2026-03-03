@@ -1,4 +1,6 @@
 # General Bots AI Agent Guidelines
+- stop saving .png on root! Use /tmp. never allow new files on root.
+- never push to alm without asking first - pbecause it is production!
 8080 is server 3000 is client ui 
 if you are in trouble with some tool, please go to the ofiical website to get proper install or instructions
 To test web is http://localhost:3000 (botui!)
