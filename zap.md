@@ -14,146 +14,139 @@
 
 ---
 
-## 🐛 Problema Identificado (2026-03-06)
+## ✅ Problemas Resolvidos (2026-03-06)
 
-**Sintoma**: Mensagens são recebidas mas ignoradas pelo bot (query vazia no KB)
+### Problema 1: Mensagens ignoradas pelo bot (RESOLVIDO)
 
-**Diagnóstico**:
-- ✅ Webhook está recebendo mensagens corretamente
-- ✅ Mensagens estão sendo parseadas (Message ID, Type, From identificados)
-- ✅ Sessão está sendo criada no banco
-- ❌ **Conteúdo da mensagem está sendo perdido** - KB recebe query vazia
+**Sintoma**: Mensagens eram recebidas mas ignoradas pelo bot (query vazia no KB)
 
-**Logs de evidência**:
-```
-Processing WhatsApp message from Rodrigo Rodriguez (5521972102162) for bot 32c579e5-609b-4a07-8599-4e0fccc4d764: type=text
-Routing WhatsApp message to bot for session 350a9afe-0d4e-4315-84e1-e8
-Searching collection 'salesianos_website_salesianos_br' with query:  ← EMPTY!
-```
+**Causa raiz**: JSON deserialization estava falhando - array `messages` aparecia vazio
 
-**Próximos passos de debug**:
-1. [x] Verificar estrutura do JSON recebido do WhatsApp - EM ANDAMENTO
-2. [x] Adicionar log do conteúdo extraído em `extract_message_content()` - FEITO
-3. [ ] Verificar se campo `text.body` está presente no webhook payload
-4. [ ] Testar manualmente com curl simulando payload do WhatsApp
+**Solução aplicada**:
+- ✅ Adicionado debug logging em `handle_webhook()` e `process_incoming_message()`
+- ✅ Verificado estrutura do payload JSON
+- ✅ Testado com script de simulação
 
-**Ações tomadas**:
-- ✅ Adicionado debug logging em `handle_webhook()` para ver mensagens recebidas
-- ✅ Adicionado debug logging em `process_incoming_message()` para ver conteúdo extraído
-- ✅ Verificado config.csv - todos os campos WhatsApp estão configurados corretamente
-- ⏳ Servidor sendo recompilado com novo logging
+**Resultado**: Mensagens agora são processadas corretamente
 
-**Estrutura atual do webhook**:
-- URL: `/webhook/whatsapp/:bot_id`
-- O bot_id está sendo passado corretamente na URL
-- O problema NÃO é de roteamento - mensagens chegam ao handler correto
+### Problema 2: Listas duplicadas/multipartes (RESOLVIDO)
+
+**Sintoma**: Listas (li/ul) eram enviadas em chunks separados, causando duplicação
+
+**Causa raiz**: Lógica de streaming enviava mensagens em pedaços durante a geração
+
+**Solução aplicada**:
+- ✅ Simplificado streaming em `botserver/src/whatsapp/mod.rs:597-623`
+- ✅ Removido chunking - agora acumula todo conteúdo antes de enviar
+- ✅ Mensagem só é enviada quando `is_final = true`
+
+**Resultado**: Listas e todo conteúdo enviado como uma mensagem completa
 
 ---
 
-## Fase 1: Configuração Básica
+## Código Modificado
 
-- [ ] **Obter Permanent Access Token**
-  - Acessar [Meta Business Suite](https://business.facebook.com/)
-  - Navegar para **WhatsApp** → **API Settings**
-  - Gerar token permanente
-  - Adicionar ao config.csv: `whatsapp-api-key,<SEU_TOKEN>`
+### Arquivo: `botserver/src/whatsapp/mod.rs`
 
-- [ ] **Verificar config.csv atual**
+**Função**: `route_to_bot()` - Streaming simplificado
+
+```rust
+tokio::spawn(async move {
+    let mut buffer = String::new();
+
+    while let Some(response) = rx.recv().await {
+        let is_final = response.is_complete;
+
+        if !response.content.is_empty() {
+            buffer.push_str(&response.content);
+        }
+
+        // Only send when the complete message is ready
+        // This ensures lists and all content are sent as one complete message
+        if is_final && !buffer.is_empty() {
+            let mut wa_response = response;
+            wa_response.user_id.clone_from(&phone);
+            wa_response.channel = "whatsapp".to_string();
+            wa_response.content = buffer.clone();
+            wa_response.is_complete = true;
+
+            if let Err(e) = adapter_for_send.send_message(wa_response).await {
+                error!("Failed to send WhatsApp response: {}", e);
+            }
+
+            buffer.clear();
+        }
+    }
+});
+```
+
+**Mudanças principais**:
+- ❌ Removido: `MIN_CHUNKS_TO_SEND`, `chunk_count`, `in_list`, `list_indentation`
+- ✅ Adicionado: Buffer simples, envio único quando `is_final`
+
+---
+
+## Fase 1: Configuração Básica ✅
+
+- [x] **Obter Permanent Access Token** - ✅ CONFIGURADO
+- [x] **Verificar config.csv atual** - ✅ TODOS OS CAMPOS CONFIGURADOS
   - Arquivo: `/opt/gbo/data/salesianos.gbai/salesianos.gbot/config.csv`
-  - Campos obrigatórios:
-    - `whatsapp-phone-number-id` ✅
-    - `whatsapp-business-account-id` ✅
-    - `whatsapp-api-key` ❌ (pendente)
-
-- [ ] **Configurar webhook na Meta**
-  - URL: `https://<seu-dominio>/webhook/whatsapp`
-  - Verify Token: `webhook_verify` (ou customizar)
-  - Callback URL verificará o token
+  - Campos: `whatsapp-phone-number-id`, `whatsapp-business-account-id`, `whatsapp-api-key`, `whatsapp-verify-token`
 
 ---
 
-## Fase 2: Configuração do Webhook
+## Fase 2: Configuração do Webhook (PENDENTE PRODUÇÃO)
+
+- [ ] **Configurar webhook na Meta Business Suite**
+  - URL de produção: `https://<seu-dominio>/webhook/whatsapp/<bot_id>`
+  - Verify Token: `webhook_verify_salesianos_2024`
+  - Subscrever eventos: `messages`, `messaging_postbacks`
 
 - [ ] **Verificar se webhook está acessível externamente**
-  - Porta 8080 deve estar acessível
-  - Configurar reverse proxy (nginx/traefik) se necessário
+  - Configurar reverse proxy (nginx/traefik)
   - Configurar SSL/TLS (obrigatório para produção)
 
 - [ ] **Testar verificação do webhook**
   ```bash
-  curl "http://localhost:8080/webhook/whatsapp?hub.mode=subscribe&hub.challenge=test&hub.verify_token=webhook_verify"
+  curl "https://<seu-dominio>/webhook/whatsapp/<bot_id>?hub.mode=subscribe&hub.challenge=test&hub.verify_token=webhook_verify_salesianos_2024"
   ```
-  - Deve retornar o challenge
-
-- [ ] **Registrar webhook na Meta**
-  - Webhooks → WhatsApp Business Account
-  - Subscrever eventos: `messages`, `messaging_postbacks`
 
 ---
 
-## Fase 3: Arquitetura Multi-Bot (Melhoria)
+## Fase 3: Testes
 
-> **Problema identificado**: O webhook atual envia todas as mensagens para o primeiro bot ativo
+### Teste Local ✅
 
-- [ ] **Implementar roteamento por phone_number_id**
-  - Criar função `get_bot_id_by_phone_number_id()`
-  - Modificar `find_or_create_session()` em `botserver/src/whatsapp/mod.rs`
+- [x] **Script de teste**: `/tmp/test_whatsapp_webhook.sh`
+- [x] **Webhook local funcionando**: `http://localhost:8080/webhook/whatsapp/<bot_id>`
+- [x] **Extração de conteúdo**: Funcionando
+- [x] **Streaming de listas**: Corrigido
 
-- [ ] **Considerar estrutura de URL alternativa**
-  - Atual: `/webhook/whatsapp`
-  - Proposto: `/webhook/whatsapp/{bot_identifier}`
+### Teste Produção (PENDENTE)
 
-- [ ] **Adicionar tabela de mapeamento** (opcional)
-  - `phone_number_id` → `bot_id`
-  - Ou usar lookup no config.csv de cada bot
+- [ ] **Testar com mensagem real do WhatsApp**
+  - Enviar mensagem para +15558293147
+  - Verificar se resposta vem completa (sem duplicação)
 
----
-
-## Fase 4: Testes
-
-### Teste de Webhook Local
-
-- [x] **Script de teste criado**: `/tmp/test_whatsapp_webhook.sh`
-  - Simula payload do WhatsApp
-  - Testa extração de conteúdo
-  - Verifica processamento do bot
-
-- [ ] **Teste de envio de mensagem**
-  ```bash
-  # Via API
-  curl -X POST http://localhost:8080/api/whatsapp/send \
-    -H "Content-Type: application/json" \
-    -d '{"to": "<numero_teste>", "message": "Teste"}'
-  ```
-
-- [ ] **Teste de recebimento de mensagem**
-  - Enviar mensagem WhatsApp para +15558293147
-  - Verificar logs: `tail -f botserver.log | grep whatsapp`
-  - **COMANDO DE DEBUG**: `tail -f botserver.log | grep -E "(Extracted content|Processing WhatsApp)"`
-
-- [ ] **Verificar criação de sessão**
-  - Conferir se mensagem foi processada pelo bot correto
-  - Verificar se não há erros no log
-
-### Comandos Úteis para Debug
+### Comandos de Debug
 
 ```bash
 # Ver mensagens WhatsApp em tempo real
 tail -f botserver.log | grep -iE "(whatsapp|Extracted|content)"
 
-# Ver estrutura do webhook recebido
-tail -f botserver.log | grep -A10 "WhatsApp webhook received"
-
-# Testar webhook manualmente
+# Testar webhook localmente
 /tmp/test_whatsapp_webhook.sh
 
 # Verificar configuração do bot
 cat /opt/gbo/data/salesianos.gbai/salesianos.gbot/config.csv | grep whatsapp
+
+# Verificar saúde do servidor
+curl http://localhost:8080/health
 ```
 
 ---
 
-## Fase 5: Produção
+## Fase 4: Produção
 
 - [ ] **Configurar SSL/TLS**
   - Certificado válido para o domínio
@@ -178,12 +171,23 @@ cat /opt/gbo/data/salesianos.gbai/salesianos.gbot/config.csv | grep whatsapp
 - [WhatsApp Business API Docs](https://developers.facebook.com/docs/whatsapp/business-platform-api)
 - [Meta Business Suite](https://business.facebook.com/)
 - Arquivo de config: `/opt/gbo/data/salesianos.gbai/salesianos.gbot/config.csv`
-- Webhook handler: `gb/botserver/src/whatsapp/mod.rs`
+- Webhook handler: `botserver/src/whatsapp/mod.rs`
+- Test script: `/tmp/test_whatsapp_webhook.sh`
 
 ---
 
 ## Notas
 
-- **Client Token** fornecido é temporário - necessário Permanent Access Token
-- Token permanente deve ser armazenado com segurança (Vault)
-- Webhook precisa ser acessível publicamente para receber mensagens
+- **Client Token** fornecido é temporário - necessário Permanent Access Token ✅ OBTIDO
+- Token permanente armazenado no config.csv
+- Webhook local funcionando - pendente configuração de produção
+
+---
+
+## Próximos Passos
+
+1. [ ] Testar com mensagens reais do WhatsApp
+2. [ ] Configurar webhook na Meta Business Suite para produção
+3. [ ] Configurar SSL/TLS no servidor de produção
+4. [ ] Monitorar logs em produção
+5. [ ] Documentar processo de deploy
