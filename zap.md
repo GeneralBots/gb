@@ -14,7 +14,121 @@
 
 ---
 
-## ✅ Problemas Resolvidos (2026-03-06)
+## 📱 Comandos Disponíveis
+
+### `/clear` - Limpar Histórico
+
+O comando `/clear` permite ao usuário limpar seu histórico de conversa com o bot.
+
+**Uso**: Digite `/clear` no WhatsApp
+
+**Comportamento**:
+- Remove todas as mensagens anteriores da sessão
+- Mantém a sessão ativa (não remove o usuário)
+- Envia confirmação ao usuário: "✅ Histórico de conversa limpo! Posso ajudar com algo mais?"
+
+**Implementação** (`botserver/src/whatsapp/mod.rs:318-353`):
+```rust
+if content.trim().to_lowercase() == "/clear" {
+    match find_or_create_session(&state, bot_id, &phone, &name).await {
+        Ok((session, _)) => {
+            clear_session_history(&state, &session.id).await?;
+            // Send confirmation
+        }
+        Err(e) => error!("Failed to get session for /clear: {}", e),
+    }
+    return Ok(());
+}
+```
+
+---
+
+## ✅ Problemas Resolvidos (2026-03-07)
+
+### Problema 6: Conteúdo pós-lista enviado junto com a lista (RESOLVIDO - 2026-03-07)
+
+**Sintoma**: Quando uma lista terminava e vinha um novo parágrafo (ex: "Sua Filosofia..."), tudo era enviado como uma mensagem só
+
+**Causa raiz**: A lógica verificava `has_list` mas não detectava quando a lista havia TERMINADO
+
+**Solução aplicada** (`botserver/src/whatsapp/mod.rs:762-832`):
+- ✅ Adicionado loop `'process_buffer` aninhado
+- ✅ Usa `extract_complete_list()` para detectar fim da lista
+- ✅ Envia lista completa separadamente
+- ✅ Re-processa conteúdo restante imediatamente (não espera próximo chunk)
+
+```rust
+'process_buffer: loop {
+    let has_list = contains_list(&buffer);
+    if has_list {
+        if let Some((list_content, remaining)) = extract_complete_list(&buffer) {
+            // List ended! Send list separately, keep remaining in buffer
+            send_part(&adapter, &phone, list_content, false).await;
+            buffer = remaining;
+            continue 'process_buffer; // Process remaining content NOW
+        }
+        // ... rest of list handling
+    } else {
+        // Non-list content handling (Sua Filosofia... goes here)
+    }
+}
+```
+
+### Problema 5: Embedding Service HTTP 500 (RESOLVIDO - 2026-03-07)
+
+**Sintoma**: Erro HTTP 500 do embedding service causava falha na busca semântica
+
+**Solução aplicada** (`botserver/src/llm/cache.rs:656-709`):
+- ✅ Implementado retry logic com exponential backoff
+- ✅ 3 tentativas com delays: 500ms, 1000ms, 2000ms
+- ✅ Retry apenas em HTTP 5xx e erros de rede
+- ✅ Timeout de 30 segundos por requisição
+
+```rust
+const MAX_RETRIES: u32 = 3;
+const INITIAL_DELAY_MS: u64 = 500;
+// Exponential backoff: 500ms, 1000ms, 2000ms
+let delay_ms = INITIAL_DELAY_MS * (1 << (attempt - 1));
+```
+
+### Problema 4: Listas separadas item por item (RESOLVIDO - 2026-03-07)
+
+**Sintoma**: Cada item de lista era enviado como mensagem separada
+
+**Solução aplicada** (`botserver/src/whatsapp/mod.rs:634-809`):
+- ✅ Lógica simplificada: se buffer contém lista, SÓ envia quando `is_final`
+- ✅ Lista inteira é acumulada antes do envio
+- ✅ Mensagens longas (>4000 chars) são divididas com `split_message_smart`
+
+```rust
+let has_list = contains_list(&buffer);
+if has_list {
+    // With lists: only flush when final or too long
+    if is_final || buffer.len() >= MAX_WHATSAPP_LENGTH {
+        // send complete list as one message
+    }
+} else {
+    // No list: use normal paragraph-based flushing
+}
+```
+
+### Problema 3: Mensagens duplicadas em respostas (RESOLVIDO - 2026-03-07)
+
+**Sintoma**: Bot enviava a mesma mensagem duas vezes seguidas no WhatsApp
+
+**Causa raiz**:
+1. O `stream_response` enviava chunks de streaming com `is_complete: false` e depois enviava uma resposta final com `is_complete: true` contendo TODO o conteúdo acumulado (`full_response`)
+2. WhatsApp faz retry de webhooks, causando processamento duplicado da mesma mensagem
+
+**Solução aplicada**:
+- ✅ Modificado `botserver/src/core/bot/mod.rs:980-983` para enviar conteúdo vazio na resposta final
+- ✅ A resposta final agora serve apenas como sinal de "streaming completo"
+- ✅ Removida variável `tool_was_executed` que não era mais necessária
+- ✅ Implementado deduplicação de mensagens por ID usando cache Redis (`botserver/src/whatsapp/mod.rs:263-284`)
+  - Usa `SET key value NX EX 300` para garantir processamento único
+  - TTL de 5 minutos para limpeza automática
+
+**Resultado**: Mensagens agora são enviadas apenas uma vez
 
 ### Problema 1: Mensagens ignoradas pelo bot (RESOLVIDO)
 
@@ -48,41 +162,71 @@
 
 ### Arquivo: `botserver/src/whatsapp/mod.rs`
 
-**Função**: `route_to_bot()` - Streaming simplificado
+**Função**: `route_to_bot()` - Streaming com particionamento inteligente
 
 ```rust
 tokio::spawn(async move {
     let mut buffer = String::new();
+    const MAX_WHATSAPP_LENGTH: usize = 4000;
+    const MIN_FLUSH_PARAGRAPHS: usize = 3;
+
+    // Helper functions
+    fn is_list_item(line: &str) -> bool { /* ... */ }
+    fn contains_list(text: &str) -> bool { /* ... */ }
 
     while let Some(response) = rx.recv().await {
         let is_final = response.is_complete;
-
         if !response.content.is_empty() {
             buffer.push_str(&response.content);
         }
 
-        // Only send when the complete message is ready
-        // This ensures lists and all content are sent as one complete message
-        if is_final && !buffer.is_empty() {
-            let mut wa_response = response;
-            wa_response.user_id.clone_from(&phone);
-            wa_response.channel = "whatsapp".to_string();
-            wa_response.content = buffer.clone();
-            wa_response.is_complete = true;
+        let has_list = contains_list(&buffer);
 
-            if let Err(e) = adapter_for_send.send_message(wa_response).await {
-                error!("Failed to send WhatsApp response: {}", e);
+        if has_list {
+            // List: ONLY flush when final or too long
+            if is_final || buffer.len() >= MAX_WHATSAPP_LENGTH {
+                // Send complete list as one message
             }
+        } else {
+            // No list: paragraph-based flushing
+            let should_flush = buffer.len() >= MAX_WHATSAPP_LENGTH ||
+                (paragraph_count >= MIN_FLUSH_PARAGRAPHS && ends_with_paragraph) ||
+                is_final;
 
-            buffer.clear();
+            if should_flush { /* send */ }
         }
     }
 });
 ```
 
+### Arquivo: `botserver/src/llm/cache.rs`
+
+**Função**: `get_embedding()` - Retry com backoff exponencial
+
+```rust
+const MAX_RETRIES: u32 = 3;
+const INITIAL_DELAY_MS: u64 = 500;
+
+for attempt in 0..MAX_RETRIES {
+    if attempt > 0 {
+        let delay_ms = INITIAL_DELAY_MS * (1 << (attempt - 1));
+        tokio::time::sleep(Duration::from_millis(delay_ms)).await;
+    }
+
+    match request.timeout(Duration::from_secs(30)).send().await {
+        Ok(response) if response.status().is_success() => return Ok(embedding),
+        Ok(response) if response.status().as_u16() >= 500 => continue, // retry
+        Err(_) => continue, // network error - retry
+        _ => return Err(...), // non-retriable
+    }
+}
+```
+
 **Mudanças principais**:
-- ❌ Removido: `MIN_CHUNKS_TO_SEND`, `chunk_count`, `in_list`, `list_indentation`
-- ✅ Adicionado: Buffer simples, envio único quando `is_final`
+- ✅ Adicionado: Retry logic para embedding service
+- ✅ Adicionado: Particionamento inteligente de mensagens
+- ✅ Adicionado: `split_message_smart` para mensagens longas
+- ✅ Adicionado: Detecção de listas para envio completo
 
 ---
 
